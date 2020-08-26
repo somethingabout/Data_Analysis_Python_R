@@ -1,6 +1,6 @@
 # Data_Analysis_Python_R
 
-The files in this repository contain lecture code for Data Analysis for R & Python (ECO 590 and ECO 396R) at Pace University taught by \href{mkaltenberg.com}{Mary Kaltenberg}. 
+The files in this repository contain lecture code for Data Analysis for R & Python (ECO 590 and ECO 396R) at Pace University taught by [Mary Kaltenberg](mkaltenberg.com}).
 
 I'm going to try a different style of presenting slides - we won't use them! Instead, I will share my jupyter notebook and we will go through the material together, and the lecture code notebooks are available through this repository. 
 
