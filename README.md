@@ -2,7 +2,7 @@
 
 The files in this repository contain lecture code for Data Analysis for R & Python (ECO 590 and ECO 396R) at Pace University taught by [Mary Kaltenberg](mkaltenberg.com}).
 
-I'm going to try a different style of presenting slides - we won't use them! Instead, I will share my jupyter notebook and we will go through the material together, and the lecture code notebooks are available through this repository. 
+I'm going to try a different style of presenting slides - we won't use them! Instead, I will share my jupyter notebook and we will go through the material together with the lecture code notebooks available through this repository. 
 
 ## Course Description:
 In this course, you’ll learn the basics of coding for data analysis using R and Python. This is a project-based course to help you learn the practicalities of working with data, which includes how to find data sources and collect your own data, data cleaning, data visualization and basic data analysis. You’ll apply your knowledge of statistics and econometrics with the ultimate goal to answer a research question in economics or business.
