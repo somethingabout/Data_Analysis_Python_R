@@ -1,0 +1,203 @@
+---
+title: "Lecture 11: Intro to Regressions & R Studio"
+output: html_notebook
+---
+
+Welcome to R Studio - some of you had some serious issues with jupyter notebook and R, so I'm going to show you a quick tour of R Studio. R Studio is by far most popular interface for R - and it's quite nice. So, let's just do a quick look at the basics.
+
+You can create a new R Notebook or R script under file> new R Script
+
+You can execute chunks by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+The grayed out areas are code, the white area is markdown. 
+
+Let's do a quick tour. For our first function, let's call the help function of library and see what happens.
+```{r}
+help(library)
+
+```
+
+You can add a new chunk of code by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+Let's take a quick look at how are notebook looks like right now. 
+
+## We're going to cover:
+
+Tidyr
+
+- pivot_longer: Pivot wide data into long format (i.e. "melt")
+- pivot_wider: Pivot long data into wide format (i.e. "cast")
+- separate: Separate (i.e. split) one column into multiple columns
+- unite: Unite (i.e. combine) multiple columns into one
+
+Regressions:
+
+- lm(): linear models
+- Robust standard errors
+- Binary Variables
+- Interactions
+
+Let's start with Tidyr and import them into our notebook
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(WDI)
+```
+# Tidy Data 
+
+R follows a set of conventions that makes one layout of tabular data much easier to work with.  We usually call this format "Long", and it will always have:
+
+1. Each variable in the data set is placed in its own column
+2. Each observation is placed in its own row
+3. Each value is placed in its own cell
+
+So, generally, you're trying to get your data into that point. Luckily, there are a few commands to help you with this.
+
+We'll learn to transform data with pivot_longer and pivot_wider
+
+There are lots of ways to do this, though: reshape(), melt() [from wide to long], cast() [from long to wide], gather()[from wide to long], spread()[from long to wide]
+
+## Pivot wider
+
+Let's import the dataset that we'll use today, growth rate by country and per capita income in us dollars, 
+```{r}
+wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
+           indicator=c("NY.GDP.MKTP.KD.ZG"))
+wdi
+```
+Now, let's try to pivot our data to the wide format
+
+```{r}
+wdi_wide <- wdi %>% pivot_wider(names_from=year,values_from=NY.GDP.MKTP.KD.ZG)
+wdi_wide
+```
+```{r}
+names(wdi_wide)
+```
+
+
+## Pivot Longer
+
+We can transform the data into long format with the function
+```{r}
+names(wdi_wide) # checking the names of the columns to know what I should grab
+```
+
+```{r}
+pivot_longer(wdi_wide, c('2010':'2001'), names_to='year',values_to='gdp')
+```
+
+
+
+# Separate
+Another handy thing to learn in R is separate
+
+let's say you have dates that you want to create two columns with. You can use the function separate to help you create two distinct columns in R. 
+
+Error in str_separate(value, into = into, sep = sep, convert = convert,  : 
+
+```{r}
+stocks = read.csv("all_stocks_5yr.csv")
+date_sep = stocks %>% separate(date, into = c("year", "month", "day"), sep = '-')
+date_sep
+```
+# Unite
+
+Separates sibling is Unite - where you can combine two columns into one.
+
+```{r}
+date_sep %>% unite(date, c("month", "day", "year"), sep = "/")
+```
+# Regressions
+
+Now Let's get to running those regressions
+
+The general format is that you will specify the model as the function and inside that function you will define the regression model that you want to run. 
+
+Stata's "reg" is R's  "lm" which stands for linear model and is at the core of regression analysis.
+
+The model will look something like this:
+`lm(y ~ x1 + x2 + x3 + ..., data = df)`
+
+You can also call each of the columsn within a datafram like this:
+`lm(df$y ~ df$x1 + df$x2 + df$x3 + ...)`
+But, I prefer simplicity
+
+Let's try running a basic OLS regression with our jobs dataset.
+```{r}
+jobs = read.csv('/Users/mkaltenberg/Documents/Data Analysis Python R Lectures/Data_Analysis_Python_R/Lecture_8/job-automation-probability.csv')
+
+ols <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs)
+```
+Alright, so we got a regression!
+
+We can view some of the results in the stored item on the left. Or let's look into it with a funciton summary()
+```{r}
+summary(ols)
+```
+That's better! Ok, so, we can see all of our general statistics here. We can also view specific parts by using the dollar sign to indicate a part of the output we want to view
+```{r}
+summary(ols)$coefficients
+```
+
+You can run a subset of the data utilizing filter and grepl.  NOTE the difference in the parenthesis. 
+```{r}
+
+ols2 <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs %>% filter(!(grepl("No formal educational credential", education))))
+summary(ols2)
+```
+This is the same as this format (reminder of pipes and how we can use them)
+```{r}
+jobs_noedu =
+  jobs %>% 
+  filter(education != "No formal educational credential")
+  # filter(!(grepl("No formal educational credential", name))) ## This also works 
+
+ols2 <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs_noedu)
+summary(ols2)
+```
+## Robust standard errors
+Often (like REALLY REALLY often) we want to include robust standard errors. In stata, this is an option in the command reg. 
+
+In R, it's an entirely new function. So, let's import the package estimates
+```{r}
+library(estimatr)
+
+ols1_robust = lm_robust(prob ~ average_ann_wage + numbEmployed , data = jobs)
+summary(ols1_robust)
+```
+# Binary Variables
+
+Another thing you may want to do is include a dummy variable in your regression.
+
+Generally, we consider this factors. In stata, you can include factors as i.dummy_variable
+
+R makes this pretty easy - it automatically knows that you are using a string variable and will create categorical variables (factors) out of that. 
+```{r}
+ols_edu = lm_robust(prob ~ average_ann_wage + numbEmployed +education, data = jobs)
+summary(ols_edu)
+```
+## Interaction variables
+
+There is a convenient syntax on how to include interaction terms:
+
+    x1:x2 “crosses” the variables (equivalent to including only the x1 × x2 interaction term)
+    x1/x2 “nests” the second variable within the first (equivalent to x1 + x1:x2)
+    x1*x2 includes all parent and interaction terms (equivalent to x1 + x2 + x1:x2)
+    
+Almost always you'll use *  (all parent and interaction terms). There are situations in which you wouldn't, but it's rare. 
+
+So, let's check it out
+```{r}
+int = lm_robust(prob ~ average_ann_wage + numbEmployed*education, data = jobs)
+summary(int)
+```
+
+
+
+
