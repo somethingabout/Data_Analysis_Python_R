@@ -70,7 +70,11 @@ wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
            indicator=c("NY.GDP.MKTP.KD.ZG"))
 wdi
 ```
-Now, let's try to pivot our data to the wide format
+Now, let's try to pivot our data to the wide format.
+
+When we pivot wider, it's going to look something like this:
+
+<img src ='pivotwider.png'>
 
 ```{r}
 wdi_wide <- wdi %>% pivot_wider(names_from=year,values_from=NY.GDP.MKTP.KD.ZG)
@@ -83,7 +87,11 @@ names(wdi_wide)
 
 ## Pivot Longer
 
-We can transform the data into long format with the function
+We can transform the data into long format with the function pivot_longer. It'll look something like this:
+
+<img src ='pivotlonger.png'>
+
+
 ```{r}
 names(wdi_wide) # checking the names of the columns to know what I should grab
 ```
@@ -99,11 +107,13 @@ Another handy thing to learn in R is separate
 
 let's say you have dates that you want to create two columns with. You can use the function separate to help you create two distinct columns in R. 
 
-Error in str_separate(value, into = into, sep = sep, convert = convert,  : 
-
 ```{r}
 stocks = read.csv("all_stocks_5yr.csv")
-date_sep = stocks %>% separate(date, into = c("year", "month", "day"), sep = '-')
+date_sep <- stocks %>% separate(date, into = c("year", "month", "day"), sep = '-')
+
+#this arrows denote assigning an object - the direction of the arrow matters, but you can see the placement before or after the code is equivalent. The code below works exactly the same as the code above.
+stocks %>% separate(date, into = c("year", "month", "day"), sep = '-') -> dat_sep
+
 date_sep
 ```
 # Unite
@@ -124,7 +134,7 @@ Stata's "reg" is R's  "lm" which stands for linear model and is at the core of r
 The model will look something like this:
 `lm(y ~ x1 + x2 + x3 + ..., data = df)`
 
-You can also call each of the columsn within a datafram like this:
+You can also call each of the columns within a dataframe like this:
 `lm(df$y ~ df$x1 + df$x2 + df$x3 + ...)`
 But, I prefer simplicity
 
@@ -136,9 +146,10 @@ ols <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs)
 ```
 Alright, so we got a regression!
 
-We can view some of the results in the stored item on the left. Or let's look into it with a funciton summary()
+We can view some of the results in the stored item on the left. Or let's look into it with a function summary()
 ```{r}
 summary(ols)
+rm(jobs_noedu)
 ```
 That's better! Ok, so, we can see all of our general statistics here. We can also view specific parts by using the dollar sign to indicate a part of the output we want to view
 ```{r}
@@ -179,9 +190,11 @@ Generally, we consider this factors. In stata, you can include factors as i.dumm
 
 R makes this pretty easy - it automatically knows that you are using a string variable and will create categorical variables (factors) out of that. 
 ```{r}
-ols_edu = lm_robust(prob ~ average_ann_wage + numbEmployed +education, data = jobs)
+ols_edu = lm_robust(prob ~ average_ann_wage + numbEmployed + factor(education), data = jobs)
 summary(ols_edu)
 ```
+
+
 ## Interaction variables
 
 There is a convenient syntax on how to include interaction terms:
@@ -192,7 +205,7 @@ There is a convenient syntax on how to include interaction terms:
     
 Almost always you'll use *  (all parent and interaction terms). There are situations in which you wouldn't, but it's rare. 
 
-So, let's check it out
+So, let's check it out:
 ```{r}
 int = lm_robust(prob ~ average_ann_wage + numbEmployed*education, data = jobs)
 summary(int)

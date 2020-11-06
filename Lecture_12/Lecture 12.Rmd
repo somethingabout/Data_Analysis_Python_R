@@ -1,0 +1,26 @@
+---
+title: "Lecture 12: Advanced Regressions & Stargazer"
+output: html_notebook
+---
+
+
+#Panel Data
+
+To do panel data you'll be using the function plm()
+
+There is an option for "within" - that is the fixed effects model. This is because you are taking differences within a country 
+
+```{r}
+library(plm)
+
+wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
+           indicator=c("NY.GDP.MKTP.KD.ZG","SL.TLF.CACT.FE.ZS","SP.POP.TOTL"))
+```
+```{r}
+
+paneldata <- plm.data(wdi, ))
+
+
+fixed <- plm(NY.GDP.MKTP.KD.ZG ~ SL.TLF.CACT.FE.ZS + SP.POP.TOTL , data=wdi, model="within")
+summary(fixed)
+```
