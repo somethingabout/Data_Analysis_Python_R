@@ -2,25 +2,326 @@
 title: "Lecture 12: Advanced Regressions & Stargazer"
 output: html_notebook
 ---
+### We're going to cover:
+
+Regression related:
+
+- Panel (Fixed and Random Effects)
+- Logit
+- Margins
+
+Output:
+
+- Stargazer
+- Modelsummary
+
+# Advanced Regressions
+
+## Panel Data
+
+There are a few packages out there that implement panel data models. We'll cover two of them, plm() - an older frequently used package, and a newer package, fixest(). Another package to note is [lfe](https://cran.r-project.org/web/packages/lfe/index.html). 
 
 
-#Panel Data
+### Fixed Effects Models
 
-To do panel data you'll be using the function plm()
 
-There is an option for "within" - that is the fixed effects model. This is because you are taking differences within a country 
+Fixed effects models are equivalent to including dummy variables for the entity that you are following over time. You can include these dummy variables as factors (either for time or entity). However, that is computationally inefficient if you have some 1,500 people, for example. So, instead, we use the within transformation. 
+
+In plm() is an option for "within" - that is the fixed effects model. This is because you are taking differences within an entity.  
+
+Let's use world bank data to apply the fixed effects model.
 
 ```{r}
 library(plm)
+library(WDI)
+library(dplyr)
 
 wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
-           indicator=c("NY.GDP.MKTP.KD.ZG","SL.TLF.CACT.FE.ZS","SP.POP.TOTL"))
+           indicator=c("NY.GDP.MKTP.KD.ZG","SL.TLF.CACT.FE.ZS","SP.POP.TOTL", "SE.PRM.CUAT.ZS" ))
 ```
+
+Let's quickly clean this up a bit by renaming the columns. I'm going to leave in unnecessary columns since the data is not very large, but if I was working with a large dataframe, I'd drop it.
+
 ```{r}
+wdi <- rename(wdi,  gdp= NY.GDP.MKTP.KD.ZG, lfpart_f= SL.TLF.CACT.FE.ZS, pop= SP.POP.TOTL, edu = SE.PRM.CUAT.ZS)
 
-paneldata <- plm.data(wdi, ))
+names(wdi)
+```
 
 
-fixed <- plm(NY.GDP.MKTP.KD.ZG ~ SL.TLF.CACT.FE.ZS + SP.POP.TOTL , data=wdi, model="within")
+Now, let's run our model.
+
+
+We need to tell plm what entity is being followed and what is the variable for time using the option index, and we need to tell plm what kind of model we are running. 
+
+Typically, the function is a class of regression methods and there will be an option for a specific estimation model.  plm can be considered a package for panel data models and the estimation model is "within"
+
+A one-way fixed effects model is like this:
+```{r}
+fixed <- plm(gdp~  pop +edu , data=wdi, index = c("iso2c"), model="within")
 summary(fixed)
 ```
+
+But, we can include fixed effects for time, too. We just need to include it in the index.
+
+```{r}
+fixed <- plm(gdp~  pop +edu , data=wdi, index = c("iso2c", "year"), model="within")
+summary(fixed)
+```
+
+We can see the number of observations (N), the number of groups (n), how many units you have over time (T). 
+
+
+If you want to see the fixedeffects estimtates, you can do this with `fixef()`
+
+```{r}
+fixef(fixed)
+
+```
+### fixest
+You can run the same above regression with the package fixest using the function feols(). I'm mentioning this particular package because it is *insanely* fast. It can handle a huge amount of fixed effects where stata might break (unless you use reghdfe). It can support non-linear models, high-dimensional fixed effects, multiway clustering and a bunch of options that come in handy when you work with detailed data or big data.  So, I want you to know it exists because of it's flexibility in all things fixed effects.
+
+Let's try it. Rather than setting the fixed effects with an index, you'll include the variables that are fixed after `|` 
+
+Let's see what I mean here:
+
+```{r}
+library(fixest)
+
+fixed_est = feols(gdp~  pop +edu | country + year, data = wdi)  ## Fixed effect(s) go after the "|"
+fixed_est
+```
+Standard errors are already clustered by country automatically, but if you want standard errors, you can do so using summary and the option se
+
+```{r}
+summary(fixed_est, se = 'standard')
+```
+
+There might be time where you want to cluster your standard errors with specific items. You can also specify what you would like to cluster with the option cluster
+```{r}
+summary(fixed_est, cluster = c('iso2c'))
+```
+
+### Random Effects Models
+
+For plm, changing to a random effect model is pretty simple. You just need to change the option "model" to "random"
+
+
+```{r}
+re <- plm(gdp~ edu   , data=wdi, index = c("iso2c"), model="random")
+summary(re)
+```
+
+
+There is something else called a mixed model where you might have both fixed effects and random effect parameters. This is particularly useful for nested datasets and when you might want to include fixed effects at one level and random effects for another variable. I've rarely seen it in economics papers, but it is often included in psychology models.  I won't discuss this indepthly, but [here](https://m-clark.github.io/mixed-models-with-R/introduction.html) is a website that explains how to apply it in R - although there are many out there and often people use the package [lmer()](https://rstudio-pubs-static.s3.amazonaws.com/63556_e35cc7e2dfb54a5bb551f3fa4b3ec4ae.html). 
+
+#### Hausman Taylor test
+
+You may know that when deciding between random or fixed effects models, you have to ensure that the random variables do not correlate with your independent variables. Frequently, this assumption is broken and is why most people use fixed effects models.  However, we often want to test between our fixed or random effect model. We do this with the `phtest()` function in plm.
+
+```{r}
+fe <- plm(gdp~ edu   , data=wdi, index = c("iso2c"), model="within")
+
+phtest(fe, re)
+```
+
+There are a variety of tests for serial correlation, heteroskedasticity, random effects (if you should include random effects compared to an ols model, stationarity/unit roots, etc). These are outlined in the vignettes of plm and you can explore them further on your own. 
+
+## Logit/Probit
+
+Logit/probit models can be run using the generalized linear model packages `glm()`  You identify a logit or probit model using the option "family".  You need to specify the link function to distinguish between a logit or probit model.
+
+A good introduction to logit models (and many other applied econometric models) can be found at UCLA's website [here](https://stats.idre.ucla.edu/r/dae/logit-regression/) and for probit models [here](https://stats.idre.ucla.edu/r/dae/probit-regression/)
+
+Let's start with a logit model:
+```{r}
+
+setwd("/Users/mkaltenberg/Documents/Data Analysis Python R Lectures/Data_Analysis_Python_R/Lecture_12/")
+smoking <- read.csv("smoking.csv")
+names(smoking)
+```
+```{r}
+logit <- glm(smoker ~ age + female + hsdrop +hsgrad +colsome +colgrad, data = smoking, family = "binomial")
+summary(logit)
+```
+
+The probit model just needs a tweak in the link function within the option "family", and that is set like this:
+
+```{r}
+probit <- glm(smoker ~ age + female + hsdrop +hsgrad +colsome +colgrad, data = smoking, family = binomial(link = "probit"))
+summary(probit)
+```
+
+Marginal effects can't be read directly from the output. You need to apply the link function to interpret the results (though the sign and standard error can be interpreted as usual). 
+
+This is why the margins function is so important!  Margins works with other regressions, as well. 
+
+## Margins
+The margins package is quite similar to the margins package in STATA. You can apply interpretation to a wide variety of regressions - logit/probit, but also non-linear terms in OLS models. You can check out more examples and features in its vignette [here](https://cran.r-project.org/web/packages/margins/vignettes/Introduction.html).
+
+
+The package makes it easy to calculate values and plot them. 
+
+When we use `margins(model_name)`  it will give us the *average* marginal effect for each variable
+
+```{r}
+library(margins)
+logit_m <-margins(logit)
+
+ols_m <-margins(ols)
+```
+And we can plot it quit easily:
+```{r}
+plot(logit_m)
+```
+
+To get the partial effect at the mean (or at any particular value), we us the at option:
+
+Here we specify a range of numbers
+```{r}
+margins(logit, at = list(age = c(18,40,60)), variables = "age")
+
+```
+
+Or at the mean of age
+```{r}
+
+mean_age = mean(smoking$age, na.rm=TRUE)
+
+margins(logit, at = list(age = c(mean(smoking$age, na.rm=TRUE))), variables = "age")
+
+```
+
+### Marignal effects for non-linear terms in OLS
+
+The margins package can also be used to get the marginal effects for non-linear terms in OLS models - often these are interactions or polynomial functions.  Let's take an example of a model with the squared term population.
+
+Notice that to square a term I use "^2" and the "I()" to indicate that it's a second order term.
+
+```{r}
+
+int <- lm(gdp ~ lfpart_f + pop + I(pop^2), data = wdi)
+summary(int)
+```
+
+Let's apply marginal effect to population.
+```{r}
+# in python wdi['pop']
+fivenum(wdi$pop)
+margins(int, at = list(pop = mean(wdi$pop, na.rm= TRUE)))
+```
+And we can also graph the marginal effect of population with `cplot()`
+
+```{r}
+cplot(int, "pop", what = "effect", main = "Average Marginal Effect of Population")
+```
+
+# Output
+
+There are a LOT of packages out there to export and display various statistical results. You can take a look at them [here](https://hughjonesd.github.io/huxtable/design-principles.html)
+
+There are very few that export directly to word (flextable and huxtable) - rather, you would export html output and then copy and paste it into word or for a presentation or export a pdf from R markdown for a presentation. The reason that there are such few packages that export to word is because it's a nightmare of bugs. Also, most researchers using R/Python use LaTex for formatting, thus most packages export to LaTex quite easily. 
+
+We will focus on two of them that make output in a variety of formats easy and pretty - stargazer and modelsummary. 
+
+## Stargazer
+
+Most people who use R for data analysis use stargazer as a way to present regression tables and summary statistics. It is by far the most popular package for this - possibly because it's so easy to use the output looks very nice
+
+```{r}
+library(stargazer)
+
+ols <- lm(gdp~  pop +edu, data = wdi)      
+
+stargazer(ols, re, fixed, type = "text",  title = "My Panel Data Models")  
+
+```
+
+We can export the table into html with the option "out"  - let's check out what the files looks like after we export it. 
+```{r}
+stargazer(ols, re, fixed, type = "html", out = "regression.html" ,title = "My models")
+```
+We can easily see the regression when we directly input the code in R Markdown
+
+
+<table style="text-align:center"><caption><strong>My models</strong></caption>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td colspan="3"><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="3" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td colspan="3">gdp</td></tr>
+<tr><td style="text-align:left"></td><td><em>OLS</em></td><td colspan="2"><em>panel</em></td></tr>
+<tr><td style="text-align:left"></td><td><em></em></td><td colspan="2"><em>linear</em></td></tr>
+<tr><td style="text-align:left"></td><td>(1)</td><td>(2)</td><td>(3)</td></tr>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">pop</td><td>-0.000</td><td></td><td>-0.00000</td></tr>
+<tr><td style="text-align:left"></td><td>(0.000)</td><td></td><td>(0.00000)</td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td><td></td></tr>
+<tr><td style="text-align:left">edu</td><td>-0.057<sup>***</sup></td><td>-0.057<sup>***</sup></td><td>-0.076<sup>*</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.008)</td><td>(0.009)</td><td>(0.041)</td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td><td></td></tr>
+<tr><td style="text-align:left">Constant</td><td>8.468<sup>***</sup></td><td>8.444<sup>***</sup></td><td></td></tr>
+<tr><td style="text-align:left"></td><td>(0.664)</td><td>(0.780)</td><td></td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td><td></td></tr>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>662</td><td>662</td><td>662</td></tr>
+<tr><td style="text-align:left">R<sup>2</sup></td><td>0.077</td><td>0.095</td><td>0.013</td></tr>
+<tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.074</td><td>0.093</td><td>-0.271</td></tr>
+<tr><td style="text-align:left">Residual Std. Error</td><td>4.017 (df = 659)</td><td></td><td></td></tr>
+<tr><td style="text-align:left">F Statistic</td><td>27.405<sup>***</sup> (df = 2; 659)</td><td>35.873<sup>***</sup></td><td>3.472<sup>**</sup> (df = 2; 513)</td></tr>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td colspan="3" style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+</table>
+
+There are many options within stargazer that we can play around to get our tables "just right" - and you will spend a lot of time doing this. Every researcher spends more time than they like to get their tables correct.
+
+A very useful cheat sheet on stargazer can be found [here](https://www.jakeruss.com/cheatsheets/stargazer/)
+
+```{r}
+stargazer(ols, fixed, re, type = "html",   column.labels = c("OLS", "FE", "RE"), model.names = FALSE,
+          title            = "Panel Data Results",
+          covariate.labels = c("Pop", "Edu", "Labor Force Participation"),
+          dep.var.labels   = "GDP per capita")
+       
+```
+
+<table style="text-align:center"><caption><strong>Panel Data Results</strong></caption>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"></td><td colspan="3"><em>Dependent variable:</em></td></tr>
+<tr><td></td><td colspan="3" style="border-bottom: 1px solid black"></td></tr>
+<tr><td style="text-align:left"></td><td colspan="3">GDP per capita</td></tr>
+<tr><td style="text-align:left"></td><td>OLS</td><td>FE</td><td>RE</td></tr>
+<tr><td style="text-align:left"></td><td>(1)</td><td>(2)</td><td>(3)</td></tr>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Pop</td><td>-0.000</td><td>-0.00000</td><td></td></tr>
+<tr><td style="text-align:left"></td><td>(0.000)</td><td>(0.00000)</td><td></td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td><td></td></tr>
+<tr><td style="text-align:left">Edu</td><td>-0.057<sup>***</sup></td><td>-0.076<sup>*</sup></td><td>-0.057<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.008)</td><td>(0.041)</td><td>(0.009)</td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td><td></td></tr>
+<tr><td style="text-align:left">Labor Force Participation</td><td>8.468<sup>***</sup></td><td></td><td>8.444<sup>***</sup></td></tr>
+<tr><td style="text-align:left"></td><td>(0.664)</td><td></td><td>(0.780)</td></tr>
+<tr><td style="text-align:left"></td><td></td><td></td><td></td></tr>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Observations</td><td>662</td><td>662</td><td>662</td></tr>
+<tr><td style="text-align:left">R<sup>2</sup></td><td>0.077</td><td>0.013</td><td>0.095</td></tr>
+<tr><td style="text-align:left">Adjusted R<sup>2</sup></td><td>0.074</td><td>-0.271</td><td>0.093</td></tr>
+<tr><td style="text-align:left">Residual Std. Error</td><td>4.017 (df = 659)</td><td></td><td></td></tr>
+<tr><td style="text-align:left">F Statistic</td><td>27.405<sup>***</sup> (df = 2; 659)</td><td>3.472<sup>**</sup> (df = 2; 513)</td><td>35.873<sup>***</sup></td></tr>
+<tr><td colspan="4" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left"><em>Note:</em></td><td colspan="3" style="text-align:right"><sup>*</sup>p<0.1; <sup>**</sup>p<0.05; <sup>***</sup>p<0.01</td></tr>
+</table>
+
+
+
+## Model Summary
+
+Model Summary is a quick an easy way to export and view regression tables.
+
+```{r}
+library(modelsummary)
+
+msummary(list(fixed, ols, re))
+```
+
+And summary statistics with vtable
+
+```{r}
+library(vtable) 
+
+st(wdi)
+
+```
+
+There are also other options that exist with satasummary that you can check out [here](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)

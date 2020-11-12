@@ -26,7 +26,9 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 Let's take a quick look at how are notebook looks like right now. 
 
 ## We're going to cover:
-
+Tibble
+ - Tibbles as dataframes
+ 
 Tidyr
 
 - pivot_longer: Pivot wide data into long format (i.e. "melt")
@@ -58,13 +60,13 @@ R follows a set of conventions that makes one layout of tabular data much easier
 
 So, generally, you're trying to get your data into that point. Luckily, there are a few commands to help you with this.
 
-We'll learn to transform data with pivot_longer and pivot_wider
-
 There are lots of ways to do this, though: reshape(), melt() [from wide to long], cast() [from long to wide], gather()[from wide to long], spread()[from long to wide]
+
+But, we'll learn to transform data with pivot_longer and pivot_wider
 
 ## Pivot wider
 
-Let's import the dataset that we'll use today, growth rate by country and per capita income in us dollars, 
+Let's import the dataset that we'll use today -  growth rate by country - using the R package WDI.  Be sure to install packages as install.packages(WDI)
 ```{r}
 wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
            indicator=c("NY.GDP.MKTP.KD.ZG"))
@@ -80,17 +82,18 @@ When we pivot wider, it's going to look something like this:
 wdi_wide <- wdi %>% pivot_wider(names_from=year,values_from=NY.GDP.MKTP.KD.ZG)
 wdi_wide
 ```
-```{r}
-names(wdi_wide)
-```
-
-
 ## Pivot Longer
 
-We can transform the data into long format with the function pivot_longer. It'll look something like this:
+We can transform the data into long format with the function pivot_longer. 
+
+ It'll look something like this:
 
 <img src ='pivotlonger.png'>
 
+Before I pivot, I'm going to check the names of my columns to see what columns I need to transform.
+```{r}
+names(wdi_wide)
+```
 
 ```{r}
 names(wdi_wide) # checking the names of the columns to know what I should grab
@@ -99,8 +102,6 @@ names(wdi_wide) # checking the names of the columns to know what I should grab
 ```{r}
 pivot_longer(wdi_wide, c('2010':'2001'), names_to='year',values_to='gdp')
 ```
-
-
 
 # Separate
 Another handy thing to learn in R is separate
