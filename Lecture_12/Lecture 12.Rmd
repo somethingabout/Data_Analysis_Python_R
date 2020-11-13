@@ -204,16 +204,43 @@ int <- lm(gdp ~ lfpart_f + pop + I(pop^2), data = wdi)
 summary(int)
 ```
 
-Let's apply marginal effect to population.
+Let's apply marginal effect to population. We can take the marginal effect of any particular value of population that we are interested in.
 ```{r}
 # in python wdi['pop']
-fivenum(wdi$pop)
-margins(int, at = list(pop = mean(wdi$pop, na.rm= TRUE)))
+
+m_pop <- mean(wdi$pop, na.rm=TRUE)  # getting the mean of population
+
+margins(int, at = list(pop =m_pop)) 
 ```
-And we can also graph the marginal effect of population with `cplot()`
+
+We can combine those two lines of code into one (and not save the value of the mean of population that will take up RAM)
 
 ```{r}
-cplot(int, "pop", what = "effect", main = "Average Marginal Effect of Population")
+margins(int, at = list(pop = mean(wdi$pop, na.rm=TRUE)))
+
+```
+We can input a list of values rather than just one value
+
+```{r}
+margins(int, at = list(pop = c(1000000,5000000, 9000000)))
+
+```
+
+
+It's far better to use numbers relevant to the value/data that exists. We can use a bunch of summary statistics instead of just one to see the marginal effects of population. Turkey's 5 numbers include min, lower hinge, median, upper hinge and maximum - the function is called `fivenum()`
+
+Looking at the marginal effects, you can see that the labor force participation of women is constant (as expected), but population marginal effects depend on the value of population - there seems to be a non-linear relationship.
+
+```{r}
+fivenum(wdi$pop, na.rm= TRUE)  # This is how to get the statistics
+
+margins(int, at = list(pop =fivenum(wdi$pop, na.rm= TRUE)))  #integrated within margins command
+```
+
+
+And we can also graph the marginal effect of population with `cplot()`
+```{r}
+cplot(int, "pop", what = "effect", main = "Average Marginal Effect of Populat qion")
 ```
 
 # Output
@@ -228,8 +255,13 @@ We will focus on two of them that make output in a variety of formats easy and p
 
 Most people who use R for data analysis use stargazer as a way to present regression tables and summary statistics. It is by far the most popular package for this - possibly because it's so easy to use the output looks very nice
 
-```{r}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
 library(stargazer)
+```
+
+
+```{r}
 
 ols <- lm(gdp~  pop +edu, data = wdi)      
 
@@ -273,9 +305,9 @@ There are many options within stargazer that we can play around to get our table
 A very useful cheat sheet on stargazer can be found [here](https://www.jakeruss.com/cheatsheets/stargazer/)
 
 ```{r}
-stargazer(ols, fixed, re, type = "html",   column.labels = c("OLS", "FE", "RE"), model.names = FALSE,
+stargazer(ols, fixed, re, type = "html",   column.labels = c("OLS", "RE", "FE"), model.names = FALSE,
           title            = "Panel Data Results",
-          covariate.labels = c("Pop", "Edu", "Labor Force Participation"),
+          covariate.labels = c("Pop", "Edu", "Constant"),
           dep.var.labels   = "GDP per capita")
        
 ```
@@ -324,4 +356,4 @@ st(wdi)
 
 ```
 
-There are also other options that exist with satasummary that you can check out [here](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
+There are also other options that exist with datasummary that you can check out [here](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
