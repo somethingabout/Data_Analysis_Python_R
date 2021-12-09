@@ -1,0 +1,9 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+alt text
+
+https://medium.com/nightingale/writing-alt-text-for-data-visualization-2a218ef43f81
