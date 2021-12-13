@@ -114,7 +114,7 @@ This is really for thinking about alt text, what we often do for twitter or even
 
 ## Colors
 
-As always we can add colors. Color is an option in any of the graphs funciton we use.
+As always we can add colors. Color is an option in any of the graphs funciton we use. Lots of pallettes, colors and options can be found [here](https://www.datanovia.com/en/blog/top-r-color-palettes-to-know-for-great-data-visualization/).
 
 ```{r}
 library(RColorBrewer) # This package helps add color palettes
@@ -143,5 +143,16 @@ boxplots <- ggplot(data = ceosal, mapping = aes(y = lsalary, x  = cat_industry))
         x = "Categories")
 
 ceo_sal_line / boxplots + plot_layout(heights = c(2, 2))
+```
+
+# exporting
+with the funciton ggsave, you can export any graph (remember it's where you set your working directory unless you specify otherwise)
+```{r}
+
+plots <- ceo_sal_line / boxplots + plot_layout(heights = c(2, 2))
+
+ggsave("2plots.png", plots, dpi = 300)
+#saving at a dpi of 300
+# you can also specify the height and width if needed
 ```
 
