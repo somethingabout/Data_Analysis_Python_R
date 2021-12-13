@@ -175,10 +175,10 @@ Similar to pandas, you'll often need to clean a column of strings or other symbo
 
 `str_replace_all(df$columname, "things to replace", "replace it with something")`
 ```{r}
-str_replace_all(wdi$gdp, "[,$!-]", "")
 
 #Don't forget to assign it!
-wdi$gdp < -str_replace_all(wdi$gdp, "[,$!-]", "")
+wdi$gdp <- str_replace_all(wdi$gdp, "[,$!]", "")
+
 ```
 
 
@@ -207,7 +207,7 @@ When we pivot wider, it's going to look something like this:
 <img src ='pivotwider.png'>
 
 ```{r}
-wdi_wide <- wdi %>% pivot_wider(names_from=year,values_from=NY.GDP.MKTP.KD.ZG)
+wdi_wide <- wdi %>% pivot_wider(names_from=year,values_from=gdp)
 wdi_wide
 ```
 ## Pivot Longer

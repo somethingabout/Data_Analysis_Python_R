@@ -1,9 +1,147 @@
 ---
-title: "R Notebook"
+title: "Graphs in R"
 output: html_notebook
 ---
 
+# We're going to cover:
 
-alt text
+ - ggplot()
+    - scatter plolts
+    - line plots
+    - boxplots
+    - details
+        - titles
+        - colors
+        - facettes
+        - multi-figures
 
-https://medium.com/nightingale/writing-alt-text-for-data-visualization-2a218ef43f81
+
+We're going to use the library wooldridge and import the ceo salary dataset. This is a sneakpeak on the datasets that we will be using in eco 585: applied econometrics.
+
+It create a dataframe called ceosal1
+
+```{r}
+library(wooldridge)
+
+data("ceosal1")
+
+names(ceosal1)
+```
+
+We're going to do some simple examples of graphing with the premiere graphing package in R - ggplot2. This is included in tidyverse, so let's load that in
+
+```{r}
+library(tidyverse)
+```
+
+## Scatterplot
+
+Your traditional scatter plots. You must tell R the data set you are pulling, the x and y axis and then add , that's right, add (plus sign) that you would like a scatter plot. This is particularly important for continuous variables.
+
+```{r}
+ggplot(data = ceosal1, mapping = aes(x = lsalary, y =  lsales)) + geom_point()
+```
+
+What's kind of nice about this is that you can assign the core information to a variable and then add on what kind of graph you want to see.
+```{r}
+sal_sales <- ggplot(data = ceosal1, mapping = aes(x = lsalary, y =  lsales)) 
+
+#below is where you see that additional graphing capability
+sal_sales + geom_point()
+```
+
+# Lineplots
+
+
+So, creating line graphs are easy. We just change the ending of the type of plot we want. 
+```{r}
+sal_sales + geom_line()
+```
+
+## boxplots
+box plots are similarly easy to show
+
+```{r}
+
+ggplot(data = ceosal1, mapping = aes(y = lsalary))  + geom_boxplot()
+
+ # we can even add some more detail about the distribution and change the color
+sal_sales + geom_boxplot() + geom_jitter(alpha = 0.3, color = "tomato")
+
+```
+```{r}
+
+#creating a category variable that I can get information by groups
+ceosal <- pivot_longer(ceosal1, c('indus':'utility'), names_to='cat_industry', values_to= 'roe2')
+ceosal<-subset(ceosal,  roe2!=0)
+ceosal$roe2<- NULL
+
+```
+
+
+```{r}
+ggplot(data = ceosal, mapping = aes(y = lsalary, x  = cat_industry)) + geom_boxplot() 
+```
+
+## Faceting
+
+You can create multiple graphs in one figure through faceting. 
+
+```{r}
+ceo_graph <- ggplot(data = ceosal, mapping = aes(y = lsalary, x  = lsales)) 
+
+ceo_graph + geom_line()  + facet_wrap(facets = vars(cat_industry))
+```
+# Customization
+
+We can do a lot of custom details to make our graphs look perfect.  You can take a look at different themes[here](https://ggplot2.tidyverse.org/reference/ggtheme.html).
+
+```{r}
+ceo_sal_line <- ceo_graph + geom_line() +
+labs(title = "Relationship of Ceo Salary and Sales by Industry",
+        x = "Salary (logged)",
+        y = "Sales (logged)") +
+    theme_bw() +  # we can add themes (same as in python)
+    theme(text=element_text(size = 16))  #specify text size across the entire graph
+
+ceo_sal_line
+```
+
+Some good advice on how to write short descriptions about data visualization can be found here: 
+https://medium.com/nightingale/writing-alt-text-for-data-visualization-2a218ef43f81 
+
+This is really for thinking about alt text, what we often do for twitter or even markdown - but I think it's a good way to think about how to title and explain graphs quickly.
+
+## Colors
+
+As always we can add colors. Color is an option in any of the graphs funciton we use.
+
+```{r}
+library(RColorBrewer) # This package helps add color palettes
+
+ggplot(data = ceosal, mapping = aes(y = lsalary, x  = cat_industry)) + geom_point(aes(color = cat_industry))
+
+```
+
+We can also add our transparency 
+
+```{r}
+sal_sales + geom_point(alpha = .3)
+```
+
+
+
+# Multiple Plots
+As in python, you can put together plots on one figure
+
+```{r}
+#must import this package to facilitate (don't forget to install it - only have to do it once)
+library(patchwork)
+
+boxplots <- ggplot(data = ceosal, mapping = aes(y = lsalary, x  = cat_industry)) + geom_boxplot() +
+  labs(y = "Salary (logged)",
+        x = "Categories")
+
+ceo_sal_line / boxplots + plot_layout(heights = c(2, 2))
+```
+
