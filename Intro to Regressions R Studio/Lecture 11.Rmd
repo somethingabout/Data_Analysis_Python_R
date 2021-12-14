@@ -1,5 +1,5 @@
 ---
-title: 'Lecture 11: Intro to Regressions & R Studio'
+title: 'Lecture 11: Intro to Data Wrangling & Regressions'
 output:
   pdf_document: default
   html_document:
