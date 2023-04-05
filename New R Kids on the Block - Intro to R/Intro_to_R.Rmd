@@ -1,0 +1,552 @@
+---
+## Introduction to R
+
+Python and R have a lot of similarities in the way they operate, but there are some slight differences.
+
+Remember how I said computer languages are a lot like languages? Well, you're about to become bilingual.
+
+Depending on what your most comfortable with, you may think about how to say it in your primary language and then translate it to your secondar/tertiary language. 
+
+Python and R are kind of like Italian and Spanish - they're different, but if you know one really well, learning the other language is not super hard. It will take work to master it, of course, but the translation is similar enough that you can figure it out quickly if you can find the write words you need to use. 
+
+A great resource that is listed in the syllabus is R for Data Science that is freely available online [here](https://r4ds.had.co.nz/) - I heavily rely on this in the lecture. And another good option YaRrr! the Pirates Guide to R is [here](https://bookdown.org/ndphillips/YaRrr/order-sorting-data.html)
+
+### CRAN & Mirrors 
+R codes are stored in a series of servers across the world through Comprehensive R Archive Network (CRAN) - all of R related information is stored separately in each server (with the same exact information)
+
+So, likely, the first thing you'll need to do is to use a mirror near you - a list of mirrors can be found here
+
+Once you set it, it's done. No need to go back to this step unless for some reason you want to pull from a different server (maybe if you move, one that is closer to you)
+
+```{r}
+options("repos" = c(CRAN = "http://lib.stat.cmu.edu/R/CRAN/"))
+```
+
+We call packages through "library" Such as:
+
+"library(package_name)"
+
+You have to call the package that you want in your notebook.
+In a moment, we're going to start working with tidyverse and dplyr.
+But, just to see the importing of a package, let's try it here.
+
+```{r}
+library(dplyr)
+```
+
+If you want o install a package you can do so, like this:
+
+`install.packages(dplyr)'
+
+OR you can install through the R Studio browser - I'll show you that now.  
+
+### Basic Commands
+
+Before we get to working with data, let's do a quick over view of some basic commands
+
+To change the working directory we use:
+
+setwd(/your/working/directory/)
+
+to find out where you are in your working directory we use:
+
+`getwd()'
+
+```{r}
+getwd()
+```
+
+```{r}
+setwd('/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/New R Kids on the Block/')
+```
+
+### Assignments
+
+In R documentation they almost always use <- but = also works.
+
+```{r}
+x <- 'hi there!'
+x
+y= 'bye'
+
+```
+
+You can change a variable name just as easily be reassigning the variable name.
+
+```{r}
+(y <- seq(0, 10, 2))
+```
+
+## Reserved Words
+
+Like in Python, some words are best to never use (so you don't override core programs in R)
+
+- if 
+- else 
+- while 
+- function 
+- for
+- TRUE 
+- FALSE 
+- NULL 
+- Inf 
+- NaN 
+- NA
+- c() <- especially this one, don't use it!
+
+A full list can be found [here](https://stat.ethz.ch/R-manual/R-devel/library/base/html/Reserved.html)
+
+### Import/Export Data
+
+To read a csv file you use
+
+read.csv(path_to_csv_file)
+
+To save a csv file you use write.csv(df, path_to_csv_file)
+
+```{r}
+#Don't forget to assign it!
+jobs_r <- read.csv('job-automation-probability.csv')
+```
+
+Ok, now you. Go onto classes and download the file and import into R Studio now. If you have an error or other issues, share your screen and I can help you.
+
+Exporting data is also easy: 
+```{r}
+write.csv(jobs_r, 'jobs2.csv')
+```
+
+### Help function
+
+you can always ask for documentation, but that function is: help()
+
+```{r}
+help(seq)
+help('read.csv')
+```
+For packages, there is also a summary about the package and what it does with vignette
+
+```{r}
+vignette('dplyr')
+```
+
+
+### Removing objects
+
+Objects can clog up our RAM, especially if they are large datafiles. If you want to remove an object the function is rm()
+
+```{r}
+rm(x,y)
+```
+
+You can also removing EVERYTHING in your environment with
+
+```{r}
+rm(list = ls())
+```
+
+#### Readr
+A faster way to import data is the package readr - this becomes important with larger datasets where you want to efficiently read data into your computer.
+
+Just remember that it will delete everything and you'd have to import all of your data again
+
+```{r}
+library(readr)
+jobs = read_csv('job-automation-probability.csv')
+
+# IF you want to specify the delimiter  
+jobs = read_delim('job-automation-probability.csv',  delim = ',')
+```
+
+You can compare the two ways we imported the dataset, there are differences in the way they import:
+
+```{r}
+#read.csv
+jobs_r = read.csv('job-automation-probability.csv')
+names(jobs_r)
+#read_csv from readr
+names(jobs)
+```
+
+
+You can also import a variety of other formats like stata with Haven.
+
+```{r}
+library(haven)
+```
+
+##### SAS
+```{r}
+#read_sas("mtcars.sas7bdat")
+#write_sas(mtcars, "mtcars.sas7bdat")
+
+```
+##### SPSS
+```{r}
+#read_sav("mtcars.sav")
+#write_sav(mtcars, "mtcars.sav")
+```
+
+##### Stata
+```{r}
+#read_dta("mtcars.dta")
+#write_dta(mtcars, "mtcars.dta")
+```
+
+## Data Manipulation
+
+I'll show some of the commands we used in python
+
+- Pick variables by their names (select())
+    - select 
+    Select (i.e. subset) columns by their names
+- Dropping variables by their names
+- Pick observations by their values (filter())
+    - filter
+    Filter (i.e. subset) rows based on their values.
+- Reorder the rows (arrange()) (sort feature)
+    - arrange
+    Arrange (i.e. reorder) rows based on their values.
+- Create new variables with functions of existing variables (mutate())
+    - mutate
+    Create new columns.
+- Groupby and Summarise
+    - groupby
+    group items by keys
+    - summarise
+    Collapse multiple rows into a single summary value.
+- Merge dataframes together with join
+    - join()
+    Perform left, right, full, and inner joins in R    
+    
+Generally, you're going to tell R
+1. what the dataframe you are manipulation is
+2. then the function you want to do
+
+```{r}
+library(dplyr)
+```
+
+#### Columns
+
+##### Getting Column Names
+To get the names of the columns in the data frame 
+
+python
+jobs.columns
+
+R
+names(df)
+
+```{r}
+names(jobs)
+```
+
+
+Select some of the columns:
+
+python
+
+jobs[['_ - code', 'prob', 'Average.annual.wage', 
+      'education', 'numbEmployed']]
+
+R      
+```{r}
+jobs %>% select(c('_ - code', 'prob', 'Average annual wage', 
+                  'education', 'numbEmployed'))
+
+```
+
+A more simplified way to do this in R
+
+```{r}
+select(jobs, c('_ - code', 'prob', 'Average annual wage', 
+               'education', 'numbEmployed'))
+```
+
+#### Multiple Syntax in R
+There are multiple ways of calling a dataframe and applying a function.
+
+The first way is
+df %>%  select(c(col_names)
+
+So, this funny thing `%>%` (called a pipe) is saying that I am going to work with the dataframe named df and I want you to apply a function called select.
+
+
+I find it much more intuitive to use
+select(df, c(column_names))
+
+Where, I have a function called select and I'm telling it that the dataframe name df is what I will apply the function select to. 
+
+Because I have a preference, we`ll stick to the latter form in the rest of the lecture - but, when you look at stack overflow and get confused as to other notation, recall that it's the same-ish.
+
+<img src = 'https://media.giphy.com/media/xT9Igj9Vh5mjLl6ZW0/giphy.gif' width = 300>
+               
+##### Dropping columns
+you just include the negative sign before the column list, and that will drop the selected columns you listed
+```{r}
+names(jobs)
+```
+
+
+```{r}
+select(jobs, -c('probability','_ - rank','employed_may2016' ,'average_ann_wage','len'))
+```
+
+### Filtering
+
+The same boolean operators in python (and any language) work in the same way.
+
+This handy chart can help you figure out what boolean operators you want to use
+
+<img src ='boolean.png' width = 500>
+
+python
+
+`jobs[jobs['prob']>.8]'
+
+
+R
+```{r}
+filter(jobs, prob >.8)
+```
+
+Python
+jobs[jobs['education']=='High school diploma or equivalent']
+
+R
+filter(df, column == 'value')
+
+```{r}
+filter(jobs, education == 'High school diploma or equivalent')
+```
+
+In pandas, we often used a tilda (~) to exclude something,
+In R you use an exclamation mark (!)
+
+#python
+jobs[~[(education == 'High school diploma or equivalent' | education =='No formal educational credential')]]
+
+R
+filter(df,!(column == 'value' | column =='value'))
+
+```{r}
+filter(jobs, !(education == 'High school diploma or equivalent' 
+               | education =='No formal educational credential'))
+```
+
+and our good friend, is.na()
+
+python    
+jobs[jobs['prob'].isnull()]
+
+Note: missing is = 'NA'
+```{r}
+filter(jobs, is.na(prob))
+```
+and to drop na items
+
+python 
+jobs['prob'].drop_na()
+
+R
+filter(df, !is.na(column))
+
+```{r}
+filter(jobs, !is.na(prob))
+```
+
+And you can rename variables in place
+
+python equivalent 
+jobs[['_ - code , _ - rank']]
+            #.rename(columns={'_ - code': 'code' , '_ - rank':'rank'})
+R
+select(df, new_name=oldname)
+
+```{r}
+select(jobs, code= '_ - code' , '_ - rank')
+```
+
+to rename just select columns, but keep the whole dataframe
+
+python 
+jobs.rename(columns={'_ - code': 'code' , '_ - rank':'rank'})
+
+R
+rename(df, new_name=old_name)
+
+```{r}
+rename(jobs, code='_ - code' , rank= '_ - rank')
+```
+
+you can select information that contains a value
+will select only the column name related to X
+
+R
+select(df, contains('value'))
+
+```{r}
+select(jobs, contains("X"))
+```
+```{r}
+names(jobs)
+```
+
+don't forget you have to override the information if you want to save over the variable
+
+```{r}
+jobs <-rename(jobs, code= '_ - code' , rank= '_ - rank', avg_ann_wage = "Average annual wage")
+```
+
+## Ordering/Sorting
+
+We can sort values in a dataframe with the function, `arrange()`
+
+It takes a data frame and a set of column names (or more complicated expressions) to order by. 
+
+Here, we are going in order of probability first and if there is a tie, education level breaks said tie
+
+python 
+jobs.sort_values(['prob', 'education'], ascend=FALSE)
+
+r
+arrange(df, column_name)
+
+```{r}
+arrange(jobs, prob,education)
+```
+
+r 
+arrange(df, desc(column_name))
+
+```{r}
+arrange(jobs, desc(prob))
+```
+
+## Mutate
+
+You may want to add a new columns that are functions of existing columns - and that function is `mutate()`
+
+mutate() always adds new columns at the end of your dataset.
+
+You can create a whole variety of new variables, as in python. Here are some useful tips on this: 
+
+**Arithmetic operators**: +, -, *, /, ^. These are all vectorised, using the so called “recycling rules”. If one parameter is shorter than the other, it will be automatically extended to be the same length. 
+
+**Modular arithmetic**: %/% (integer division) and %% (remainder), where x == y * (x %/% y) + (x %% y). Modular arithmetic is a handy tool because it allows you to break integers up into pieces. 
+
+**Logs**: log(), log2(), log10(). Logarithms are an incredibly useful transformation for dealing with data that ranges across multiple orders of magnitude. 
+
+**Offsets**: lead() and lag() allow you to refer to leading or lagging values. This allows you to compute running differences (e.g. x - lag(x)) or find when values change (x != lag(x)). This is useful for regressions with time series.
+
+**Logical comparisons**, <, <=, >, >=, !=, and == If you’re doing a complex sequence of logical operations it’s often a good idea to store the interim values in new variables so you can check that each step is working as expected.
+
+**Ranking**: there are a number of ranking functions, but you should start with min_rank(). It does the most usual type of ranking (e.g. 1st, 2nd, 2nd, 4th). The default gives smallest values the small ranks; use desc(x) to give the largest values the smallest ranks.
+
+
+here, we can see that the new variable diff is added on at the end
+
+python
+jobs['diff'] = jobs['avg_ann_wage']-jobs['median_ann_wage']
+
+r
+```{r}
+mutate(jobs,  
+      diff = avg_ann_wage - median_ann_wage)
+```
+      
+      
+If you only want to keep the new variables, use transmute()
+
+python
+diff = jobs['avg_ann_wage'] - jobs['median_ann_wage']
+
+```{r}
+transmute(jobs, 
+      diff = avg_ann_wage - median_ann_wage)
+```
+
+      
+You can combine mutate with boolean filters
+```{r}
+jobs %>% filter(occupation %in% c('Economists')) %>% mutate(
+      diff = avg_ann_wage - median_ann_wage)
+```
+
+## Groupby and Summarize
+
+We can get simple summary statistics of our dataframe, like we did in pandas with describe (but a but more complicated)
+
+In R, the function is the british spelling, `summarise()'
+
+*technically, it works with a z, too.
+
+This is is the mean probability of the entire dataset excluding any values that are NA:
+```{r}
+summarise(jobs, prob = mean(prob, na.rm=TRUE))
+```
+
+We can use summarise in conjuction with groupby, which is the same process as in python pandas. It will split the data into groups that you need and then you will use the summarise function to apply a statistic to those groups.
+
+we can create multiple new items in one groupby function:
+```{r}
+by_educ <- group_by(jobs, education)
+educ_wage <-summarise(by_educ, av_wage_educ = mean(avg_ann_wage, na.rm=TRUE),
+         count = n())
+```
+
+
+# Join
+
+Merge dataframes together. Like pandas, you can join dataframes as left, right, inner or outer. There are similar combinations with some exceptions. You can check out the documentation [here](https://cran.r-project.org/web/packages/dplyr/vignettes/two-table.html) for more details.
+
+<img src ="joins.jpeg" width= 400>
+
+- inner_join(df1, df2)
+- left_join(df1, df2)
+- right_join(df1, df2)
+- full_join(df1, df2) == outer join
+- semi_join(df1, df2)
+- anti_join(df1, df2)
+
+the general format is:
+
+join_type(df1, df2, by=c("key1_name", "key2_name"))
+
+```{r}
+by_educ <- group_by(jobs, education) #Create another dataframe by education group
+educ_emp <-summarise(by_educ, Nemp = sum(numbEmployed, na.rm=TRUE)) # That contains the number of employees by educaiton group
+```
+
+python
+
+pd.merge(educ_emp, educ_wage, on ='education', how='left')
+
+R
+```{r}
+left_join(educ_emp,educ_wage, by= c("education"))
+```
+
+
+# Breakout Group Exercises
+
+I want you to start to get familiar with R already and deal with any trouble shooting issues that you might have. 
+
+1. set your working directory to where the jobs data is located
+2. import the data "job-automation-probability.csv"
+3. select the data columns short.occupation, education, prob, average_ann_wage, X_...code
+4. calculate the minimum probability by 'education'
+5. create a new variable that calculates the difference between the minimum and maximum probability values by education and ensure that item 4 is in the same dataframe.
+
+<img src ='https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif' width = 300>
+
+## Next Week
+### What is "tidy" data?
+Resources:
+
+- [Vignette](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html) (from the **tidyr** package)
+
+- [Original paper](https://vita.had.co.nz/papers/tidy-data.pdf) (Hadley Wickham, 2014 JSS) <- this author is the same as the book I mentioned earlier
+
+### Going into the tidyverse...

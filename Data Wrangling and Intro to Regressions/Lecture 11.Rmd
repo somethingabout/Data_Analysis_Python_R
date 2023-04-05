@@ -1,0 +1,473 @@
+---
+title: 'Intro to Data Wrangling & Regressions'
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+Let's call the help function of library and see what happens.
+```{r}
+help(library)
+
+```
+
+You can add a new chunk of code by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+Let's take a quick look at how are notebook looks like right now. 
+
+## We're going to cover:
+Tidyverse
+- Packages for data wranglers
+
+Tibble
+ - Tibbles as dataframes
+ 
+stringr
+- managing strings
+ 
+Tidyr
+- pivot_longer: Pivot wide data into long format (i.e. "melt")
+- pivot_wider: Pivot long data into wide format (i.e. "cast")
+- separate: Separate (i.e. split) one column into multiple columns
+- unite: Unite (i.e. combine) multiple columns into one
+
+Regressions:
+
+- lm(): linear models
+- Robust standard errors
+- Binary Variables
+- Interactions
+
+Output:
+
+- Stargazer
+- Modelsummary
+
+
+## Tidyverse
+So, as it turns out, you've already been working with a package within the Tidyverse!
+
+tidyverse is a collection of packages. Many data scientists use it - and it's basically a bunch of packages written in similar style with a similar philosophy of approaching data structures.
+
+This [book](https://r4ds.had.co.nz/) is an additional resource to help you splice, groupby, mutate and dice up your data. 
+
+You can install this with  
+```{r}
+#install.packages("tidyverse")
+```
+
+and then load it up with 
+```{r}
+library(tidyverse)
+```
+
+Once you have this loaded, you have the following packages included:
+
+- dplyr (prior class)
+- readr (prior class)
+- tibble (this class)
+- stringr (this class)
+- tidyr (this class)
+- ggplot2 (more on this later)
+- forcats (not covered)
+
+For importing, it also automatically imports a bunch of other packages that cover:
+
+- DBI for relational databases. (Maintained by Kirill Müller.) You’ll need to pair DBI with a database specific backends like RSQLite, RMariaDB, RPostgres, or odbc. Learn more at https://db.rstudio.com.
+- haven for SPSS, Stata, and SAS data.
+- httr for web APIs.
+- readxl for .xls and .xlsx sheets.
+- googlesheets4 for Google Sheets via the Sheets API v4.
+- googledrive for Google Drive files.
+- rvest for web scraping.
+- jsonlite for JSON. (Maintained by Jeroen Ooms.)
+- xml2 for XML.
+
+### Recall from last class:
+#### Haven commands:
+
+SAS
+read_sas("mtcars.sas7bdat")
+write_sas(mtcars, "mtcars.sas7bdat")
+
+SPSS
+read_sav("mtcars.sav")
+write_sav(mtcars, "mtcars.sav")
+
+Stata
+read_dta("mtcars.dta")
+write_dta(mtcars, "mtcars.dta")
+
+
+#### Readr (export/import) commands:
+
+jobs_2 = read_csv('job-automation-probability.csv')
+jobs_2 = read_delim('job-automation-probability.csv',  delim = ',')
+write.csv(jobs, 'jobs2.csv')
+
+
+
+A cheat sheet exists for A LOT of packages - you can take a look [here](https://github.com/rstudio/cheatsheets)
+
+## Tibble
+
+Let's take a look at tibble. 
+It is just a dataframe. Really not much to it.
+
+The thing is, at first you will be annoyed. There will be a lot of errors that you are going to have to confront. The idea is that instead of R just figuring it out for you (such as columns automatically turned into strings where there are strings), it will show an error. 
+
+This is good. Because it makes you have to deal with issues with your data now - instead of dealing with an error that you don't know why it's giving you an error in a package or function later on. 
+
+Let's import the dataset that we'll use today -  growth rate by country - using the R package WDI.  Be sure to install packages as install.packages(WDI)
+
+Honestly, tibble is pretty much a pandas data frame. It displays the first 10 lines and takes your data as is so that you can work from it from the ground up.
+
+```{r}
+#install.packages("tidyverse", "wdi")
+#notice that you can import a few packages in one line
+library("WDI")
+``` 
+
+```{r}
+wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
+           indicator=c("NY.GDP.MKTP.KD.ZG"))
+```
+
+Search for indicators that contain the word 'gdp'
+```{r}
+gdp_indic <- WDIsearch('gdp')
+```
+
+
+```{r}
+wdi <-as_tibble(wdi)
+
+#it's just that easy
+```
+
+A lot more about tibble can be found [here](https://r4ds.had.co.nz/tibbles.html)
+
+We can extract columns
+
+python
+`df.columname`
+
+```{r}
+
+#wdi$NY.GDP.MKTP.KD.ZG
+
+```
+
+Notice that Rstudio shows you all of the columns after you input the dollar sign.
+
+dplyr plays nice with tibble
+Let's rename a column
+```{r}
+wdi <- rename(wdi,  gdp= 'NY.GDP.MKTP.KD.ZG')
+```
+
+## Stringr
+
+So, know that you are using tibble, you're going to need to know some basics of how to deal with strings.
+
+It's particularly useful when you want to search or filter within a string.
+
+In Python, if you assign an item a string, you can split, filter, etc. Typically, in pandas, we will assign a column a string or tell pandas we we want string operations on a column (like `df['columnname'].str.replace(',',''))`
+
+This is not so dissimilar in R. 
+
+We us the function filter and apply the string detect function to search for a particular word (in this example)
+
+```{r}
+
+wdi %>% filter(str_detect(wdi$country, "World"))
+
+```
+
+You can use these options to help you match specific cases
+
+. to match any character (except a newline)
+
+^ to match the start of the string.
+
+$ to match the end of the string.
+
+So, if we want to have countries that start with "United", we can do this as:
+```{r}
+wdi %>% filter(str_detect(wdi$country, "^World"))
+```
+
+Similar to pandas, you'll often need to clean a column of strings or other symbols (particularly if it's something you want to be integers). You'll use the str_replace or str_replace_all
+
+`str_replace_all(df$columname, "things to replace", "replace it with something")`
+```{r}
+
+#Don't forget to assign it!
+wdi$gdp <- str_replace_all(wdi$gdp, "[,$!]", "")
+
+
+```
+
+
+A whole chapter to this that you should read is [here](https://r4ds.had.co.nz/strings.html)
+
+## Tidy Data 
+
+R follows a set of conventions that makes one layout of tabular data much easier to work with.  We usually call this format "Long", and it will always have:
+
+1. Each variable in the data set is placed in its own column
+2. Each observation is placed in its own row
+3. Each value is placed in its own cell
+
+So, generally, you're trying to get your data into that point. Luckily, there are a few commands to help you with this.
+  
+There are lots of ways to do this, though: reshape(), melt() [from wide to long], cast() [from long to wide], gather()[from wide to long], spread()[from long to wide]
+
+But, we'll learn to transform data with pivot_longer and pivot_wider
+
+## Pivot wider
+
+Now, let's try to pivot our data to the wide format.
+
+When we pivot wider, it's going to look something like this:
+
+<img src ='pivotwider.png'>
+
+```{r}
+wdi_wide <- wdi %>% pivot_wider(names_from=year,values_from=gdp)
+wdi_wide
+```
+## Pivot Longer
+
+We can transform the data into long format with the function pivot_longer. 
+
+ It'll look something like this:
+
+<img src ='pivotlonger.png'>
+
+Before I pivot, I'm going to check the names of my columns to see what columns I need to transform.
+```{r}
+names(wdi_wide)
+```
+
+```{r}
+names(wdi_wide) # checking the names of the columns to know what I should grab
+```
+
+```{r}
+pivot_longer(wdi_wide, c('2005':'2002'), names_to='year',values_to='gdp')
+```
+
+# Separate
+Another handy thing to learn in R is separate
+
+let's say you have dates that you want to create two columns with. You can use the function separate to help you create two distinct columns in R. 
+
+#include Python code example
+
+```{r}
+stocks = read.csv("all_stocks_5yr.csv")
+date_sep <- stocks %>% separate(date, into = c("year", "month", "day"), sep = '-')
+
+#the arrow denotes assigning an object - the direction of the arrow matters, but you can see the placement before or after the code is equivalent. The code below works exactly the same as the code above.
+stocks %>% separate(date, into = c("year", "month", "day"), sep = '-') -> dat_sep
+
+#equivalent to
+dat_sep <- stocks %>% separate(date, into = c("year", "month", "day"), sep = '-')
+
+date_sep
+```
+# Unite
+
+Separates sibling is Unite - where you can combine two columns into one.
+
+```{r}
+date_sep %>% unite(date, c("month", "day", "year"), sep = "/")
+```
+# Regressions
+
+Now Let's get to running those regressions
+
+The general format is that you will specify the model as the function and inside that function you will define the regression model that you want to run. 
+
+Stata's "reg" is R's  "lm" which stands for linear model and is at the core of regression analysis.
+
+The model will look something like this:
+`lm(y ~ x1 + x2 + x3 + ..., data = df)`
+
+You can also call each of the columns within a dataframe like this:
+`lm(df$y ~ df$x1 + df$x2 + df$x3 + ...)`
+But, I prefer simplicity
+
+Let's try running a basic OLS regression with our jobs dataset.
+```{r}
+jobs = read.csv('/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/Becoming a Viz Kid/job-automation-probability.csv')
+
+ols <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs)
+```
+Alright, so we got a regression!
+
+We can view some of the results in the stored item on the left. Or let's look into it with a function summary()
+```{r}
+summary(ols)
+
+# if you want to remove a particular object, you can use the funciton rm()
+rm(date_sep)
+```
+That's better! Ok, so, we can see all of our general statistics here. We can also view specific parts by using the dollar sign to indicate a part of the output we want to view
+```{r}
+summary(ols)$coefficients
+```
+
+You can run a subset of the data utilizing filter and grepl.  NOTE the difference in the parenthesis. 
+
+The e quivalent in stata would be:
+reg prob average_ann_wage numbEmployed if education != "No formal educational credential"
+
+```{r}
+
+ols2 <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs %>% filter(!(grepl("No formal educational credential", education))))
+summary(ols2)
+
+```
+This is the same as this format (reminder of pipes and how we can use them)
+```{r}
+jobs_noedu =
+  jobs %>% 
+  filter(education != "No formal educational credential")
+  # filter(!(grepl("No formal educational credential", name))) ## This also works 
+
+ols2 <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs_noedu)
+summary(ols2)
+```
+## Robust standard errors
+Often (like REALLY REALLY often) we want to include robust standard errors. In stata, this is an option in the command reg. 
+
+White Standard Error Adjustment (Robust standard errors) in Stata:
+reg prob average_ann_wage  numbEmployed, r
+
+In R, it's an entirely new function. So, let's import the package estimates
+```{r}
+library(estimatr)
+
+ols1_robust = lm_robust(prob ~ average_ann_wage + numbEmployed , data = jobs)
+summary(ols1_robust)
+```
+# Binary Variables
+
+Another thing you may want to do is include a dummy variable in your regression.
+
+Generally, we consider this factors. In stata, you can include factors as i.dummy_variable
+
+R makes this pretty easy - it automatically knows that you are using a string variable and will create categorical variables (factors) out of that. 
+
+
+```{r}
+ols_edu = lm_robust(prob ~ average_ann_wage + numbEmployed + factor(education), data = jobs)
+summary(ols_edu)
+```
+
+## Interaction variables
+
+There is a convenient syntax on how to include interaction terms:
+
+    x1:x2 “crosses” the variables (equivalent to including only the x1 × x2 interaction term)
+    x1/x2 “nests” the second variable within the first (equivalent to x1 + x1:x2)
+    x1*x2 includes all parent and interaction terms (equivalent to x1 + x2 + x1:x2)
+    
+Almost always you'll use *  (all parent and interaction terms). There are situations in which you wouldn't, but it's rare. 
+
+So, let's check it out:
+```{r}
+int = lm_robust(prob ~ average_ann_wage + numbEmployed*education, data = jobs)
+summary(int)
+```
+
+# Output
+
+There are a LOT of packages out there to export and display various statistical results. You can take a look at them [here](https://hughjonesd.github.io/huxtable/design-principles.html)
+
+There are very few that export directly to word (flextable and huxtable) - rather, you would export html output and then copy and paste it into word or for a presentation or export a pdf from R markdown for a presentation. The reason that there are such few packages that export to word is because it's a nightmare of bugs. Also, most researchers using R/Python use LaTex for formatting, thus most packages export to LaTex quite easily. 
+
+We will focus on two of them that make output in a variety of formats easy and pretty - stargazer and modelsummary. 
+
+## Stargazer
+
+Most people who use R for data analysis use stargazer as a way to present regression tables and summary statistics. It is by far the most popular package for this - possibly because it's so easy to use the output looks very nice
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(stargazer)
+```
+
+
+```{r}
+
+ols2 <- lm(prob ~ education +numbEmployed+median_ann_wage, data = jobs)
+
+stargazer(ols, ols2 , type = "text",  title = "My Data Models")  
+
+```
+
+We can export the table into html with the option "out"  - let's check out what the files looks like after we export it. 
+```{r}
+stargazer(ols, ols2, type = "html", out = "regression.html" ,title = "My models")
+```
+We can easily see the regression when we directly input the code in R Markdown
+
+There are many options within stargazer that we can play around to get our tables "just right" - and you will spend a lot of time doing this. Every researcher spends more time than they like to get their tables correct.
+
+A very useful cheat sheet on stargazer can be found [here](https://www.jakeruss.com/cheatsheets/stargazer/)
+
+```{r}
+stargazer(ols, int, ols_edu, type = "html",   column.labels = c("OLS", "Interaction", "HS+"), model.names = FALSE,
+          title            = "Panel Data Results",
+          covariate.labels = c("Pop", "Edu", "Constant"),
+          dep.var.labels   = "GDP per capita")
+       
+```
+
+
+## Model Summary
+
+Model Summary is a quick an easy way to export and view regression tables.
+
+```{r}
+library(modelsummary)
+
+msummary(list(ols, int, ols_edu))
+```
+
+And summary statistics:
+
+```{r}
+library(modelsummary)
+library(tidyverse)
+
+datasummary_skim(wdi)
+```
+```{r}
+# Or you can use vtable
+library(vtable) 
+setwd("/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/Intro to Regressions R Studio/")
+
+vtable(wdi)
+#notice that it prints in "viewer" are of R Studio
+
+```
+
+There are also other options that exist with datasummary that you can check out [here](https://vincentarelbundock.github.io/modelsummary/articles/datasummary.html)
+
+## Breakout Group Exercise
+1. Import the dataset: "WAGE1.DTA" (in the same folder as this lecture on github) (hint: haven)
+2. Use OLS to estimate the effect education has on wages - be sure to include relevant controls and functional form -
+3. Create a dummy variable if the person has a child(=1, =0 if none)
+4. Use OLS to estimate Q2, but include the dummy variable you created in Q3 and be sure that wages are logged.
+5. Create a stargazer table that include regressions from  Q2 and Q4.
+
+
