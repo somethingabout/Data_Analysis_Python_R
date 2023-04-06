@@ -16,47 +16,61 @@ Courses are taught once a week for 3 hours. Most lectures take the entire three 
 
 I reccommend teaching in the following order:
 1. Install and Intro 
+
 Overview of Jupyter Notebook including installation instructions and various install issues.
 
 2. Python ABCs
+
 Basic building blocks of python coding
 
 3. Sentence Structures Count Python-ula
+
 Forloops,while statements, conditionals and numpy
 
 4. Let's get this data started Pandas
-OVerview of pandas and data wrangling
+
+Overview of pandas and data wrangling
 
 5. New Data City Access Grants
+
 Overview of Servers and APIs
 
 5a. Optional: Working with Servers
+
 Basics in how to access servers via a terminal
 
 6. Webscraping
+
 Beautiful Soup and Requests
 
 7. Webscraping 2 and Selenium
+
 More examples with webscraping and overview of Selenium (Chrome drive extentions, how to scrape java content/interactive websites)
 
 8. Becoming a Viz Kid
+
 Data Visualization- matplotlib
 
 9. Becoming a Viz Kid part 2
+
 Data Visualization - details with matplotlib (fig,ax, legends, ticks) and seaborn. Lecture on Bad Graphs
 (Typically I start on introducing R in this class)
 
 10. New R Kids on the Block - Intro to R
+
 Introduction to R and R Studio - basics in the environment, translations of code from Python to R
 
 11. Data Wrangling and Intro to Regressions
+
 Translations of Python to R for data manipulation/cleaning
 (Data analysis on it's own is too short, so I begin regressions)
 
 12. Advanced Regressions
+
 More detailed regression analysis in R & Stargazer
 
 13. Becoming an R Viz Kid
+
 ggplot2
 
 
