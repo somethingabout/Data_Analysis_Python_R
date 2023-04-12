@@ -316,8 +316,7 @@ We can view some of the results in the stored item on the left. Or let's look in
 ```{r}
 summary(ols)
 
-# if you want to remove a particular object, you can use the funciton rm()
-rm(date_sep)
+
 ```
 That's better! Ok, so, we can see all of our general statistics here. We can also view specific parts by using the dollar sign to indicate a part of the output we want to view
 ```{r}
@@ -326,7 +325,7 @@ summary(ols)$coefficients
 
 You can run a subset of the data utilizing filter and grepl.  NOTE the difference in the parenthesis. 
 
-The e quivalent in stata would be:
+The equivalent in stata would be:
 reg prob average_ann_wage numbEmployed if education != "No formal educational credential"
 
 ```{r}
@@ -415,8 +414,9 @@ stargazer(ols, ols2 , type = "text",  title = "My Data Models")
 ```
 
 We can export the table into html with the option "out"  - let's check out what the files looks like after we export it. 
+
 ```{r}
-stargazer(ols, ols2, type = "html", out = "regression.html" ,title = "My models")
+stargazer(ols, ols2, type = "html", out = "regression.html", title = "My models")
 ```
 We can easily see the regression when we directly input the code in R Markdown
 
@@ -425,10 +425,11 @@ There are many options within stargazer that we can play around to get our table
 A very useful cheat sheet on stargazer can be found [here](https://www.jakeruss.com/cheatsheets/stargazer/)
 
 ```{r}
-stargazer(ols, int, ols_edu, type = "html",   column.labels = c("OLS", "Interaction", "HS+"), model.names = FALSE,
-          title            = "Panel Data Results",
-          covariate.labels = c("Pop", "Edu", "Constant"),
-          dep.var.labels   = "GDP per capita")
+stargazer(ols, ols2, type = "html",  out = "regression_all.html", 
+          title            = "OLS Results",
+          column.labels = c("OLS", "OLS"), model.names = FALSE,
+          covariate.labels = c("Avg. Salary", "BA", "PhD+", "HS", "MA", "None", "Postsecond", "Some College", "N emp", "Med Salary"),
+          dep.var.labels   = "Prob. of Automated Job")
        
 ```
 
@@ -449,14 +450,14 @@ And summary statistics:
 library(modelsummary)
 library(tidyverse)
 
-datasummary_skim(wdi)
+datasummary_skim(jobs)
 ```
+
 ```{r}
 # Or you can use vtable
 library(vtable) 
-setwd("/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/Intro to Regressions R Studio/")
 
-vtable(wdi)
+vtable(jobs)
 #notice that it prints in "viewer" are of R Studio
 
 ```
