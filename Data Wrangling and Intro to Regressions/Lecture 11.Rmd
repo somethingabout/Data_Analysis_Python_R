@@ -357,6 +357,19 @@ library(estimatr)
 ols1_robust = lm_robust(prob ~ average_ann_wage + numbEmployed , data = jobs)
 summary(ols1_robust)
 ```
+A better way to do this so that the model can be incorporated in stargazer is the sandwhich pacakge.  estimatr for some reason doesn't play well with stargazer.
+
+
+```{r}
+library(sandwich) 
+# vcovHC   is the heteroskedasticity consistent estimation of the covariance matrix of the coefficient estimates
+
+coeftest(ols, vcov = vcovHC(ols, type="HC0"))
+
+#This gives your the standard errors
+```
+
+
 # Binary Variables
 
 Another thing you may want to do is include a dummy variable in your regression.
@@ -431,6 +444,17 @@ stargazer(ols, ols2, type = "html",  out = "regression_all.html",
           covariate.labels = c("Avg. Salary", "BA", "PhD+", "HS", "MA", "None", "Postsecond", "Some College", "N emp", "Med Salary"),
           dep.var.labels   = "Prob. of Automated Job")
        
+```
+
+###Robust standard errors and stargazer
+```{r}
+ols_r<-coeftest(ols, vcov = vcovHC(ols, type="HC0"))
+stargazer(ols, ols_r, type = "html",  out = "regression_all.html", 
+          title            = "OLS Results",
+          column.labels = c("OLS", "OLS robust"), model.names = FALSE,
+          covariate.labels = c("Avg. Salary", "BA", "PhD+", "HS", "MA", "None", "Postsecond", "Some College", "N emp", "Med Salary"),
+          dep.var.labels   = "Prob. of Automated Job")
+
 ```
 
 

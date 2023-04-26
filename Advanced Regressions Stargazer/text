@@ -1,0 +1,30 @@
+
+% Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Tue, Apr 25, 2023 - 18:40:38
+\begin{table}[!htbp] \centering 
+  \caption{} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-3} 
+\\[-1.8ex] & \multicolumn{2}{c}{gdp} \\ 
+\\[-1.8ex] & (1) & (2)\\ 
+\hline \\[-1.8ex] 
+ edu & $-$0.109$^{***}$ & $-$0.013 \\ 
+  & (0.038) & (0.035) \\ 
+  & & \\ 
+ log(pop) & $-$10.776$^{***}$ & $-$6.210$^{***}$ \\ 
+  & (1.883) & (1.648) \\ 
+  & & \\ 
+\hline \\[-1.8ex] 
+Observations & 847 & 847 \\ 
+R$^{2}$ & 0.115 & 0.026 \\ 
+Adjusted R$^{2}$ & $-$0.083 & $-$0.228 \\ 
+F Statistic & 44.996$^{***}$ (df = 2; 691) & 8.873$^{***}$ (df = 2; 671) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 

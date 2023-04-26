@@ -3,6 +3,7 @@ title: 'Lecture 12: Advanced Regressions & Stargazer Continued'
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 ### We're going to cover:
 
@@ -33,7 +34,9 @@ Let's use world bank data to apply the fixed effects model.
 library("WDI")
 library("tidyverse")
 
-wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
+setwd("/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/Advanced Regressions Stargazer/")
+
+wdi <- WDI(country = "all", start=2000, end=2020, extra="TRUE",
            indicator=c("NY.GDP.MKTP.KD.ZG","SL.TLF.CACT.FE.ZS","SP.POP.TOTL", "SE.PRM.CUAT.ZS" ))
 ```
 
@@ -73,10 +76,14 @@ summary(fixed)
 ```
 
 But, we can include fixed effects for time, too. We just need to include it in the index.
-
+Two ways to do this:
 ```{r}
-fixed <- plm(gdp~ edu + log(pop) , data=wdi, index = c("iso2c", "year"), model="within")
-summary(fixed)
+fixed_tw <- plm(gdp~ edu + log(pop) , data=wdi, index = c("iso2c", "year"), effect = "twoways")
+
+fixed <- plm(gdp~ edu + log(pop) + factor(year) , data=wdi, index = c("iso2c"), model="within")
+
+
+stargazer(fixed,fixed_tw, type='text')
 ```
 
 We can see the number of observations (N), the number of groups (n), how many units you have over time (T). 
@@ -97,7 +104,7 @@ Let's see what I mean here:
 ```{r}
 library("fixest")
 
-fixed_est = feols(gdp~  edu + log(pop) | country + year, data = wdi)  ## Fixed effect(s) go after the "|"
+fixed_est = feols(gdp~  edu + log(pop) | iso2c + year, data = wdi)  ## Fixed effect(s) go after the "|"
 fixed_est
 ```
 Standard errors are already clustered by country automatically, but if you want standard errors, you can do so using summary and the option se
@@ -119,7 +126,7 @@ For plm, changing to a random effect model is pretty simple. You just need to ch
 
 
 ```{r}
-re <- plm(gdp~edu + log(pop), data=wdi, index = c("iso2c"), model="random")
+re <- plm(gdp~edu + log(pop) + factor(year), data=wdi, index = c("iso2c"), model="random")
 summary(re)
 ```
 
@@ -131,7 +138,7 @@ There is something else called a mixed model where you might have both fixed eff
 You may know that when deciding between random or fixed effects models, you have to ensure that the random variables do not correlate with your independent variables. Frequently, this assumption is broken and is why most people use fixed effects models.  However, we often want to test between our fixed or random effect model. We do this with the `phtest()` function in plm.
 
 ```{r}
-fe <- plm(gdp ~ edu +log(pop) , data=wdi, index = c("iso2c"), model="within")
+fe <- plm(gdp ~ edu +log(pop) +factor(year) , data=wdi, index = c("iso2c"), model="within")
 
 summary(fe)
 
@@ -190,7 +197,8 @@ To get the partial effect at the mean (or at any particular value), we us the at
 
 Here we specify a range of numbers
 ```{r}
-margins(logit, at = list(age = c(18,40,60)), variables = "age")
+logit_range <-margins(logit, at = list(age = c(18,40,60)), variables = "age")
+summary(logit_range)
 
 ```
 
@@ -199,7 +207,9 @@ Or at the mean of age
 
 mean_age = mean(smoking$age, na.rm=TRUE)
 
-margins(logit, at = list(age = c(mean(smoking$age, na.rm=TRUE))), variables = "age")
+logit_m <- margins(logit, at = list(age = c(mean(smoking$age, na.rm=TRUE))), variables = "age")
+
+summary(logit_m)
 
 ```
 
@@ -221,21 +231,22 @@ Let's apply marginal effect to population. We can take the marginal effect of an
 
 m_pop <- mean(wdi$pop, na.rm=TRUE)  # getting the mean of population
 
-margins(int, at = list(pop =m_pop)) 
+int_ape <- margins(int, at = list(pop =m_pop), variables= "pop") 
+summary(int_ape)
 ```
 
 We can combine those two lines of code into one (and not save the value of the mean of population that will take up RAM)
 
 ```{r}
-margins(int, at = list(pop = mean(wdi$pop, na.rm=TRUE)))
-
+int_ape <-margins(int, at = list(pop = mean(wdi$pop, na.rm=TRUE)))
+summary(int_ape)
 ```
 
 We can input a list of values rather than just one value
 
 ```{r}
-margins(int, at = list(pop = c(1000000,5000000, 9000000)))
-
+int_ape <- margins(int, at = list(pop = c(1000000,5000000, 9000000)), variable = "pop")
+summary(int_ape)
 ```
 
 
@@ -246,7 +257,9 @@ Looking at the marginal effects, you can see that the labor force participation 
 ```{r}
 fivenum(wdi$pop, na.rm= TRUE)  # This is how to get the statistics
 
-margins(int, at = list(pop =fivenum(wdi$pop, na.rm= TRUE)))  #integrated within margins command
+int_ape <- margins(int, at = list(pop =fivenum(wdi$pop, na.rm= TRUE)), variable= "pop") 
+
+summary(int_ape)#integrated within margins command
 ```
 
 
@@ -264,11 +277,49 @@ Let's show some models side by side
 library(stargazer)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 
-stargazer(ols, re, fe, type = "html", column.labels = c("OLS", "RE", "FE"), model.names = FALSE,
+stargazer(ols, re, fe, type = "html", column.labels = c("OLS", "RE", "FE"), 
+          model.names = FALSE, #remove model names
+          dep.var.caption = "", #get rid of the dependent variable title at the top
+          title = "Panel Data Results", #Have a title on your table
+          covariate.labels = c("Edu", "lnPop", "Constant"), #rename variables to be cleaner
+          omit = c("year"),  #omit the variables year from the output
+         dep.var.labels   = "", #get rid of the dependent variable label
+         model.numbers = FALSE, #get rid of model numbers
+          add.lines=list(c("Time FE", "No", "Yes", "Yes")), # add a line/row for additional info (in this case about time fixed effects)
+          notes= "Source: World Development Indicators Database", #add notes on the source of the data
+          out = "panel_results.html" )#save the file in an output
+```
+
+Let's see how we can only show covariates of interest so that our table is reasonable.  
+
+Here is the ugly table that you won't show me because it's unreasonable, right?
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+
+#long version 
+fe_ols = lm(gdp~  edu + log(pop) +factor(country) +factor(year), data = wdi, na.action = na.omit)  ## Fixed effect(s)
+
+fe_noyr <- plm(gdp ~ edu +log(pop) , data=wdi, index = c("iso2c"), model="within")
+
+```
+
+```{r}
+# fe, fe_ols,fixed_tw are all different ways to produce the same exact results
+stargazer(fe_noyr,fe, fe_ols, fixed_tw,
+          type = "html", 
+          column.labels = c("one-way FE", "FE plm", "FE dummies", "FE plm"), 
+          model.names = FALSE,
           dep.var.caption = "",
-          title            = "Panel Data Results",
+          title = "Panel Data Results", 
+          omit = c("country", "year"),  #So, if we want to remove the fixed effects or estimates, we can use the option, omit (another way to do this is keep, but that has issues with the constant) 
           covariate.labels = c("Edu", "lnPop", "Constant"),
           dep.var.labels   = "GDP per capita",
-          out = "panel_results.html")
+         add.lines=list(c("Time FE", "No", "Yes", "Yes", "Yes")),
+          out = "panel_results_long.html")
+          
+#You can also use fixed est, but it doesn't play well with stargazer
+fixed_est
 ```
+
 
