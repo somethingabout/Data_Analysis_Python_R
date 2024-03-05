@@ -57,7 +57,7 @@ getwd()
 ```
 
 ```{r}
-setwd('/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/New R Kids on the Block/')
+#setwd('/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/New R Kids on the Block/')
 ```
 
 ### Assignments
