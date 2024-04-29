@@ -57,7 +57,9 @@ getwd()
 ```
 
 ```{r}
-#setwd('/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/New R Kids on the Block/')
+
+setwd('/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/New R Kids on the Block - Intro to R/')
+
 ```
 
 ### Assignments
@@ -308,7 +310,9 @@ python
 
 R
 ```{r}
+
 filter(jobs, prob >.8)
+
 ```
 
 Python
@@ -365,7 +369,7 @@ R
 select(df, new_name=oldname)
 
 ```{r}
-select(jobs, code= '_ - code' , '_ - rank')
+select(jobs, code= '_ - code' ,  '_ - rank')
 ```
 
 to rename just select columns, but keep the whole dataframe
@@ -452,8 +456,10 @@ jobs['diff'] = jobs['avg_ann_wage']-jobs['median_ann_wage']
 
 r
 ```{r}
-mutate(jobs,  
-      diff = avg_ann_wage - median_ann_wage)
+jobs2 <- mutate(jobs,  
+      diff = average_ann_wage - median_ann_wage)
+      
+jobs %>% mutate(diff = avg_ann_wage - median_ann_wage)      
 ```
       
       
@@ -463,15 +469,15 @@ python
 diff = jobs['avg_ann_wage'] - jobs['median_ann_wage']
 
 ```{r}
-transmute(jobs, 
-      diff = avg_ann_wage - median_ann_wage)
+diffcolumn <- transmute(jobs, 
+      diff = average_ann_wage - median_ann_wage)
 ```
 
       
 You can combine mutate with boolean filters
 ```{r}
-jobs %>% filter(occupation %in% c('Economists')) %>% mutate(
-      diff = avg_ann_wage - median_ann_wage)
+econ <- jobs %>% filter(occupation %in% c('Economists')) %>% mutate(
+      diff = average_ann_wage - median_ann_wage)
 ```
 
 ## Groupby and Summarize
@@ -492,7 +498,7 @@ We can use summarise in conjuction with groupby, which is the same process as in
 we can create multiple new items in one groupby function:
 ```{r}
 by_educ <- group_by(jobs, education)
-educ_wage <-summarise(by_educ, av_wage_educ = mean(avg_ann_wage, na.rm=TRUE),
+educ_wage <-summarise(by_educ, av_wage_educ = mean(average_ann_wage, na.rm=TRUE),
          count = n())
 ```
 
@@ -517,6 +523,7 @@ join_type(df1, df2, by=c("key1_name", "key2_name"))
 ```{r}
 by_educ <- group_by(jobs, education) #Create another dataframe by education group
 educ_emp <-summarise(by_educ, Nemp = sum(numbEmployed, na.rm=TRUE)) # That contains the number of employees by educaiton group
+
 ```
 
 python
@@ -525,7 +532,7 @@ pd.merge(educ_emp, educ_wage, on ='education', how='left')
 
 R
 ```{r}
-left_join(educ_emp,educ_wage, by= c("education"))
+merge_educ <- left_join(educ_emp,educ_wage, by= c("education"))
 ```
 
 

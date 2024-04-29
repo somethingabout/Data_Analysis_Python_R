@@ -163,7 +163,7 @@ python
 
 ```
 
-Notice that Rstudio shows you all of the columns after you input the dollar sign.
+Notice that Rstudio shows you all of the rows after you input the dollar sign.
 
 dplyr plays nice with tibble
 Let's rename a column
@@ -197,18 +197,18 @@ You can use these options to help you match specific cases
 
 $ to match the end of the string.
 
-So, if we want to have countries that start with "United", we can do this as:
+So, if we want to have countries that start with "World", we can do this as:
 ```{r}
 wdi %>% filter(str_detect(wdi$country, "^World"))
 ```
 
-Similar to pandas, you'll often need to clean a column of strings or other symbols (particularly if it's something you want to be integers). You'll use the str_replace or str_replace_all
+Similar to pandas, you'll often need to clean a column of strings or other symbols (particularly if it's something you want to be integers/float). You'll use the str_replace or str_replace_all
 
 `str_replace_all(df$columname, "things to replace", "replace it with something")`
 ```{r}
 
 #Don't forget to assign it!
-wdi$gdp <- str_replace_all(wdi$gdp, "[,$!]", "")
+wdi$gdp <- str_replace_all(wdi$gdp, ",$!]", "")
 
 
 ```
@@ -260,7 +260,7 @@ names(wdi_wide) # checking the names of the columns to know what I should grab
 ```
 
 ```{r}
-pivot_longer(wdi_wide, c('2005':'2002'), names_to='year',values_to='gdp')
+wdi_long <- pivot_longer(wdi_wide, c('2009':'2001'), names_to='year',values_to='gdp growth')
 ```
 
 # Separate
@@ -316,11 +316,10 @@ We can view some of the results in the stored item on the left. Or let's look in
 ```{r}
 summary(ols)
 
-
 ```
 That's better! Ok, so, we can see all of our general statistics here. We can also view specific parts by using the dollar sign to indicate a part of the output we want to view
 ```{r}
-summary(ols)$coefficients
+summary(ols)$coefficients`
 ```
 
 You can run a subset of the data utilizing filter and grepl.  NOTE the difference in the parenthesis. 
@@ -362,7 +361,9 @@ A better way to do this so that the model can be incorporated in stargazer is th
 
 ```{r}
 library(sandwich) 
+library(lmtest) # to use coeftest
 # vcovHC   is the heteroskedasticity consistent estimation of the covariance matrix of the coefficient estimates
+
 
 coeftest(ols, vcov = vcovHC(ols, type="HC0"))
 
@@ -380,7 +381,7 @@ R makes this pretty easy - it automatically knows that you are using a string va
 
 
 ```{r}
-ols_edu = lm_robust(prob ~ average_ann_wage + numbEmployed + factor(education), data = jobs)
+ols_edu = lm(prob ~ average_ann_wage + numbEmployed + factor(education), data = jobs)
 summary(ols_edu)
 ```
 
@@ -396,6 +397,7 @@ Almost always you'll use *  (all parent and interaction terms). There are situat
 
 So, let's check it out:
 ```{r}
+library(estimatr)
 int = lm_robust(prob ~ average_ann_wage + numbEmployed*education, data = jobs)
 summary(int)
 ```
@@ -422,14 +424,16 @@ library(stargazer)
 
 ols2 <- lm(prob ~ education +numbEmployed+median_ann_wage, data = jobs)
 
-stargazer(ols, ols2 , type = "text",  title = "My Data Models")  
+stargazer(ols, ols_edu , type = "text",  title = "My Data Models")  
 
 ```
 
 We can export the table into html with the option "out"  - let's check out what the files looks like after we export it. 
 
 ```{r}
-stargazer(ols, ols2, type = "html", out = "regression.html", title = "My models")
+
+stargazer(ols, ols_edu, type = "html", out = "regression.html", title = "My models")
+
 ```
 We can easily see the regression when we directly input the code in R Markdown
 
@@ -438,10 +442,10 @@ There are many options within stargazer that we can play around to get our table
 A very useful cheat sheet on stargazer can be found [here](https://www.jakeruss.com/cheatsheets/stargazer/)
 
 ```{r}
-stargazer(ols, ols2, type = "html",  out = "regression_all.html", 
+stargazer(ols, ols_edu, type = "html",  out = "regression_all.html", 
           title            = "OLS Results",
           column.labels = c("OLS", "OLS"), model.names = FALSE,
-          covariate.labels = c("Avg. Salary", "BA", "PhD+", "HS", "MA", "None", "Postsecond", "Some College", "N emp", "Med Salary"),
+          covariate.labels = c("Avg. Salary", "BA", "PhD+", "HS", "MA", "None", "Postsecond", "Some College", "N emp"),
           dep.var.labels   = "Prob. of Automated Job")
        
 ```
@@ -449,39 +453,24 @@ stargazer(ols, ols2, type = "html",  out = "regression_all.html",
 ###Robust standard errors and stargazer
 ```{r}
 ols_r<-coeftest(ols, vcov = vcovHC(ols, type="HC0"))
-stargazer(ols, ols_r, type = "html",  out = "regression_all.html", 
-          title            = "OLS Results",
+stargazer(ols, type = "html",  out = "regression_all.html", 
+          title            = "OLS Results", se =  ols_r,
           column.labels = c("OLS", "OLS robust"), model.names = FALSE,
-          covariate.labels = c("Avg. Salary", "BA", "PhD+", "HS", "MA", "None", "Postsecond", "Some College", "N emp", "Med Salary"),
+          #covariate.labels = c("Avg. Salary", "BA", "PhD+", "HS", "MA", "None", "Postsecond", "Some College", "N emp", "Med Salary"),
           dep.var.labels   = "Prob. of Automated Job")
 
 ```
 
 
-## Model Summary
 
-Model Summary is a quick an easy way to export and view regression tables.
+#vtable
 
-```{r}
-library(modelsummary)
-
-msummary(list(ols, int, ols_edu))
-```
-
-And summary statistics:
-
-```{r}
-library(modelsummary)
-library(tidyverse)
-
-datasummary_skim(jobs)
-```
-
+For quick summary statistics you can you Vtable
 ```{r}
 # Or you can use vtable
 library(vtable) 
 
-vtable(jobs)
+sumtable(jobs)
 #notice that it prints in "viewer" are of R Studio
 
 ```

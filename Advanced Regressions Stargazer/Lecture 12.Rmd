@@ -31,8 +31,8 @@ In plm() is an option for "within" - that is the fixed effects model. This is be
 Let's use world bank data to apply the fixed effects model.
 
 ```{r}
-library("WDI")
-library("tidyverse")
+library(WDI)
+library(tidyverse)
 
 setwd("/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/Advanced Regressions Stargazer/")
 
@@ -43,7 +43,7 @@ wdi <- WDI(country = "all", start=2000, end=2020, extra="TRUE",
 Let's quickly clean this up a bit by renaming the columns. I'm going to leave in unnecessary columns since the data is not very large, but if I was working with a large dataframe, I'd drop it.
 
 ```{r}
-wdi <- rename(wdi,  gdp= NY.GDP.MKTP.KD.ZG, lfpart_f= SL.TLF.CACT.FE.ZS, pop= SP.POP.TOTL, edu = SE.PRM.CUAT.ZS)
+wdi <-rename(wdi,gdp= NY.GDP.MKTP.KD.ZG, lfpart_f= SL.TLF.CACT.FE.ZS, pop= SP.POP.TOTL, edu = SE.PRM.CUAT.ZS)
 
 names(wdi)
 ```
@@ -60,11 +60,11 @@ Now, let's run our model.
 
 We need to tell plm what entity is being followed and what is the variable for time using the option index, and we need to tell plm what kind of model we are running. 
 
-Typically, the function is a class of regression methods and there will be an option for a specific estimation model.  plm can be considered a package for panel data models and the estimation model is "within"
+Typically, the function is a class of regression methods and there will be an option for a specific estimation method and model.  plm can be considered a package for panel data models and the estimation method is "within"
 
 A one-way fixed effects model is like this:
 ```{r}
-library("plm")
+library(plm)
 fixed <- plm(gdp~  edu + log(pop) , data=wdi, index = c("iso2c"), model="within")
 
 summary(fixed)
@@ -78,6 +78,7 @@ summary(fixed)
 But, we can include fixed effects for time, too. We just need to include it in the index.
 Two ways to do this:
 ```{r}
+library(stargazer)
 fixed_tw <- plm(gdp~ edu + log(pop) , data=wdi, index = c("iso2c", "year"), effect = "twoways")
 
 fixed <- plm(gdp~ edu + log(pop) + factor(year) , data=wdi, index = c("iso2c"), model="within")
@@ -102,7 +103,7 @@ Let's try it. Rather than setting the fixed effects with an index, you'll includ
 Let's see what I mean here:
 
 ```{r}
-library("fixest")
+library(fixest)
 
 fixed_est = feols(gdp~  edu + log(pop) | iso2c + year, data = wdi)  ## Fixed effect(s) go after the "|"
 fixed_est
@@ -321,5 +322,126 @@ stargazer(fe_noyr,fe, fe_ols, fixed_tw,
 #You can also use fixed est, but it doesn't play well with stargazer
 fixed_est
 ```
+## Time-Series Regressions
 
+### Lags and Leads
+Lags and leads are pretty straightforward to add to an OLS model
+
+```{r}
+lagols <-  lm(gdp~ lfpart_f + log(pop) + lag(log(pop) , n=1) +lag(log(pop), n = 2), data = wdi)
+summary(lagols)
+
+lagplm <-plm(gdp~ lfpart_f + log(pop) + lag(log(pop) , n=1) +lag(log(pop), n = 2), data = wdi, index = c("iso2c" ,"year"), ignorena = TRUE)
+summary(lagplm)
+```
+Leads are similarly as easy....
+
+```{r}
+leadplm <-plm(gdp~ lfpart_f + log(pop) + lead(log(pop) , n=1) +lead(log(pop), n = 2), data = wdi, index = c("iso2c" ,"year"), ignorena = TRUE)
+summary(leadplm)
+```
+
+
+### VAR
+
+We will load our packages and then set the date column to a datetype so R knows that the column corresponds to a Date. It can be in any format, including quarters, so you just need to tell it what the format is. I have pulled this mostly for this [Towards Data Science blog] (https://towardsdatascience.com/a-deep-dive-on-vector-autoregression-in-r-58767ebb3f06). This [reference](https://www.econometrics-with-r.org/16.1-vector-autoregressions.html) may also be helpful.
+
+
+```{r}
+#loading all of the relevant packages
+library(vars)
+library(mFilter)
+library(tseries)
+library(TSstudio)
+library(forecast)
+library(vtable) 
+```
+```{r}
+#getting VAR sample data
+data <-read.csv("/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/Advanced Regressions Stargazer/SampleVAR.csv")
+
+#First, format the date column so R knows it's a date
+
+data$date <- as.Date(data$date, format = "%m/%d/%y")
+
+```
+
+
+Next, you need to tell stata that the variables are time series and what frequency.
+
+```{r}
+#the data is quarterly, but the format of the date column is month day year. So, the frequency i 4.
+gdp <- ts(data$real_gdp_growth, start = c(1999,2), frequency = 4)
+psei <- ts(data$psei, start = c(1999,2), frequency = 4)
+unem <- ts(data$unem, start = c(1999,2), frequency = 4)
+bsp <- ts(data$bsp_rrp, start = c(1999,2), frequency = 4)
+
+#We'll do this for each variable we want to follow over time
+```
+
+After declaring variables time series, you can do a lot of things much easier - run regressions or plot
+```{r}
+#pretty graphs
+ts_plot(gdp)
+
+```
+
+
+Next, we'll bind the variables together to build our VAR model
+
+```{r}
+v1 <- cbind(gdp, bsp,psei, unem)
+colnames(v1) <- cbind("GDP","BDP","PSEI", "UNEM")
+```
+
+Now, you need to figure out the number of lags
+
+```{r}
+lagselect <- VARselect(v1, lag.max = 15, type = "const")
+```
+
+And we estimate. Each equation represents an equation in the VAR system.
+
+```{r}
+Model1 <- VAR(v1, p = 2, type = "const", season = NULL, exog = NULL) 
+summary(Model1)
+```
+
+You may want to do some testing, like for autocorrelation:
+
+```{r}
+Serial1 <- serial.test(Model1, lags.pt = 5, type = "PT.asymptotic")
+Serial1
+
+```
+Granger Causality tests 
+
+```{r}
+Grangergdp<- causality(Model1, cause = "GDP")
+Grangergdp
+
+Grangerbdp<- causality(Model1, cause = "BDP")
+Grangerbdp
+
+Grangerpsei<- causality(Model1, cause = "PSEI")
+Grangerpsei
+
+Grangerunem<- causality(Model1, cause = "UNEM")
+Grangerunem
+
+```
+Impulse Response Functions
+
+```{r}
+GDPirf <- irf(Model1, impulse = "GDP", response = "GDP", n.ahead = 20, boot = TRUE)
+plot(GDPirf, ylab = "GDP", main = "GDP's shock to GDP")
+```
+
+
+ACF and PACEF Graphs
+
+```{r}
+acf (gdp, lag.max = 20, type = c("correlation", "covariance", "partial"), plot= TRUE,na.action = na.contiguous, demean = TRUE)
+pacf (gdp, lag.max = 20, plot = TRUE, na.action = na.contiguous)
+```
 
