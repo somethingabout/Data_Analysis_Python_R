@@ -438,10 +438,16 @@ plot(GDPirf, ylab = "GDP", main = "GDP's shock to GDP")
 ```
 
 
-ACF and PACEF Graphs
+ACF and PACF Graphs
 
 ```{r}
 acf (gdp, lag.max = 20, type = c("correlation", "covariance", "partial"), plot= TRUE,na.action = na.contiguous, demean = TRUE)
 pacf (gdp, lag.max = 20, plot = TRUE, na.action = na.contiguous)
+```
+
+Add Arima Models
+
+```{r}
+
 ```
 
