@@ -203,6 +203,11 @@ summary(logit_range)
 
 ```
 
+```{r}
+cplot.glm(logit_range)
+```
+
+
 Or at the mean of age
 ```{r}
 
@@ -285,7 +290,7 @@ stargazer(ols, re, fe, type = "html", column.labels = c("OLS", "RE", "FE"),
           covariate.labels = c("Edu", "lnPop", "Constant"), #rename variables to be cleaner
           omit = c("year"),  #omit the variables year from the output
          dep.var.labels   = "", #get rid of the dependent variable label
-         model.numbers = FALSE, #get rid of model numbers
+         model.numbers = FALSE, #g`et rid of model numbers
           add.lines=list(c("Time FE", "No", "Yes", "Yes")), # add a line/row for additional info (in this case about time fixed effects)
           notes= "Source: World Development Indicators Database", #add notes on the source of the data
           out = "panel_results.html" )#save the file in an output

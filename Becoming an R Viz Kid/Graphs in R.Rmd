@@ -39,7 +39,7 @@ library(tidyverse)
 Your traditional scatter plots. You must tell R the data set you are pulling, the x and y axis and then add , that's right, add (plus sign) that you would like a scatter plot. This is particularly important for continuous variables.
 
 ```{r}
-ggplot(data = ceosal1, mapping = aes(x = lsalary, y =  lsales)) + geom_point()
+ggplot(data = ceosal1, mapping = aes(x = lsales, y =  lsalary)) + geom_point()
 ```
 
 What's kind of nice about this is that you can assign the core information to a variable and then add on what kind of graph you want to see.
@@ -102,7 +102,7 @@ labs(title = "Relationship of Ceo Salary and Sales by Industry",
         x = "Salary (logged)",
         y = "Sales (logged)") +
     theme_classic() +  # we can add themes (same as in python)
-    theme(text=element_text(size = 16))  #specify text size across the entire graph
+    theme(text=element_text(size = 12))  #specify text size across the entire graph
 
 ceo_sal_scatter
 ```
@@ -142,16 +142,20 @@ boxplots <- ggplot(data = ceosal, mapping = aes(y = lsalary, x  = cat_industry))
   labs(y = "Salary (logged)",
         x = "Categories")
 
-ceo_sal_scatter / boxplots + plot_layout(ncol = 2) +ggtitle("Title") +theme(plot.title = element_text(hjust=-.2))
+ceo_sal_scatter / boxplots  + plot_layout(ncol = 2, nrow=1)  +theme(plot.title = element_text(hjust=-.2))
+
+#also ggarrange()
 
 ```
 
 # exporting
-with the funciton ggsave, you can export any graph (remember it's where you set your working directory unless you specify otherwise)
+with the function ggsave, you can export any graph (remember it's where you set your working directory unless you specify otherwise)
 ```{r}
 getwd()
 
-plots <- ceo_sal_line / boxplots + plot_layout(heights = c(2, 2))
+plots_ceo <- ceo_sal_scatter / boxplots + plot_layout(heights = c(2, 2))
+
+ggsave("plotsfromclass.jpeg", plot = plots_ceo, dpi = 300)
 
 #saving at a dpi of 300
 # you can also specify the height and width if needed

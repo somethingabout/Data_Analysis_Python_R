@@ -36,8 +36,9 @@ library(dplyr)
 
 If you want o install a package you can do so, like this:
 
-`install.packages(dplyr)'
-
+```{r}
+install.packages("dplyr")
+```
 OR you can install through the R Studio browser - I'll show you that now.  
 
 ### Basic Commands
@@ -254,16 +255,13 @@ jobs[['_ - code', 'prob', 'Average.annual.wage',
 
 R      
 ```{r}
-jobs %>% select(c('_ - code', 'prob', 'Average annual wage', 
-                  'education', 'numbEmployed'))
-
+jobs %>% select(c('_ - code', 'prob', 'Average annual wage', 'education', 'numbEmployed'))
 ```
 
 A more simplified way to do this in R
 
 ```{r}
-select(jobs, c('_ - code', 'prob', 'Average annual wage', 
-               'education', 'numbEmployed'))
+select(jobs, c('_ - code', 'prob', 'Average annual wage', 'education', 'numbEmployed'))
 ```
 
 #### Multiple Syntax in R
@@ -381,7 +379,8 @@ R
 rename(df, new_name=old_name)
 
 ```{r}
-rename(jobs, code='_ - code' , rank= '_ - rank')
+rename(jobs, code="_ - code" , rank= "_ - rank")
+
 ```
 
 you can select information that contains a value

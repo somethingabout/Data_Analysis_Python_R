@@ -61,6 +61,7 @@ You can install this with
 #install.packages("tidyverse")
 ```
 
+
 and then load it up with 
 ```{r}
 library(tidyverse)
@@ -140,7 +141,7 @@ wdi <- WDI(country = "all", start=2000, end=2015, extra="TRUE",
 
 Search for indicators that contain the word 'gdp'
 ```{r}
-gdp_indic <- WDIsearch('gdp')
+gdp_indic <- WDIsearch('gdp per capita')
 ```
 
 
@@ -287,7 +288,7 @@ date_sep
 Separates sibling is Unite - where you can combine two columns into one.
 
 ```{r}
-date_sep %>% unite(date, c("month", "day", "year"), sep = "/")
+stock_unite <-date_sep %>% unite(date, c("month", "day", "year"), sep = "/")
 ```
 # Regressions
 
@@ -309,6 +310,8 @@ Let's try running a basic OLS regression with our jobs dataset.
 jobs = read.csv('/Users/mkaltenberg/Documents/GitHub/Data_Analysis_Python_R/Becoming a Viz Kid/job-automation-probability.csv')
 
 ols <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs)
+summary(ols)
+
 ```
 Alright, so we got a regression!
 
@@ -319,7 +322,7 @@ summary(ols)
 ```
 That's better! Ok, so, we can see all of our general statistics here. We can also view specific parts by using the dollar sign to indicate a part of the output we want to view
 ```{r}
-summary(ols)$coefficients`
+summary(ols)$coefficients
 ```
 
 You can run a subset of the data utilizing filter and grepl.  NOTE the difference in the parenthesis. 
@@ -330,7 +333,9 @@ reg prob average_ann_wage numbEmployed if education != "No formal educational cr
 ```{r}
 
 ols2 <- lm(prob ~ average_ann_wage + numbEmployed , data = jobs %>% filter(!(grepl("No formal educational credential", education))))
+
 summary(ols2)
+
 
 ```
 This is the same as this format (reminder of pipes and how we can use them)
@@ -354,6 +359,7 @@ In R, it's an entirely new function. So, let's import the package estimates
 library(estimatr)
 
 ols1_robust = lm_robust(prob ~ average_ann_wage + numbEmployed , data = jobs)
+
 summary(ols1_robust)
 ```
 A better way to do this so that the model can be incorporated in stargazer is the sandwhich pacakge.  estimatr for some reason doesn't play well with stargazer.
@@ -430,7 +436,8 @@ stargazer(ols, ols_edu , type = "text",  title = "My Data Models")
 
 We can export the table into html with the option "out"  - let's check out what the files looks like after we export it. 
 
-```{r}
+```{r, results='asis'}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 
 stargazer(ols, ols_edu, type = "html", out = "regression.html", title = "My models")
 
@@ -441,7 +448,13 @@ There are many options within stargazer that we can play around to get our table
 
 A very useful cheat sheet on stargazer can be found [here](https://www.jakeruss.com/cheatsheets/stargazer/)
 
-```{r}
+The code at the top:{r, results='asis'} allows you to display the html code in your knitr output.
+
+```{r, results='asis'}
+
+```
+
+```{r, results='asis'}
 stargazer(ols, ols_edu, type = "html",  out = "regression_all.html", 
           title            = "OLS Results",
           column.labels = c("OLS", "OLS"), model.names = FALSE,
@@ -451,7 +464,8 @@ stargazer(ols, ols_edu, type = "html",  out = "regression_all.html",
 ```
 
 ###Robust standard errors and stargazer
-```{r}
+
+```{r, results='asis'}
 ols_r<-coeftest(ols, vcov = vcovHC(ols, type="HC0"))
 stargazer(ols, type = "html",  out = "regression_all.html", 
           title            = "OLS Results", se =  ols_r,
